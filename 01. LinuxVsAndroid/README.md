@@ -276,8 +276,6 @@ In Android, **Binder** facilitates communication between:
 
 #### 1.11.2.1. **Modified Linux Kernel (Androism)**:
 
-![image-20241214214535746](README.assets/image-20241214214535746.png)
-
 - **Base Linux Kernel**: Android uses a modified version of the **Linux kernel**. The kernel itself is similar to the traditional Linux kernel but includes specific changes to support Android features and mobile hardware.
 
 - **Changes** :
