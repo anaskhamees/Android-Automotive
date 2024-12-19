@@ -755,11 +755,6 @@ Every Android application runs in its own  **own isolated runtime environment**,
 >
 >
 
-**Role in Android Automotive**:
-
-- Ensures applications like **navigation systems**, **media apps**, and **vehicle settings apps** run efficiently.
-- ART is optimized to handle **real-time processing** required for vehicle operations.
-
 **Example**:
 
 - If the user interacts with **Google Assistant** for hands-free commands like “Navigate to the nearest gas station,” ART executes the required Android app code in real time.
@@ -1119,9 +1114,9 @@ The Android Framework provides APIs to interact with hardware components like **
 
    The **Service Manager** is tightly integrated with the **Binder IPC** mechanism, which is the foundation for communication between components in Android.
 
-   -------------------------
+   -------------------------------------------------------------------------
 
-   ### Binder IPC Mechanism:
+   #### Binder IPC Mechanism:
 
    1. **Binder Driver**: A kernel driver that enables IPC between processes.
    2. **Service Manager**: A system process that manages service registration and lookup.
@@ -1204,15 +1199,21 @@ For example, if i have a custom sensor like Temperature sensor
 >
 >Your Android app sends a request for temperature data (or any custom sensor data) to the **native service**. The app is interacting with the **Java API** you provide for your custom sensor, but it doesn’t directly deal with the low-level hardware. Instead, it communicates with the **Binder Proxy**.
 >
+>---------------------
+>
 >2. **Android Framework Layer**
 >
 >This layer provides the **ServiceManager**, which connects the app to the **Native Service** responsible for handling custom sensor requests. The **ServiceManager** will look for your **custom sensor service** in the **Native Layer**.
 >
 >For example, you might create a **TemperatureService** in your native C++ code (using the **Binder** framework) that handles requests for your custom temperature sensor.
 >
+>---------------------------
+>
 >3. **ServiceManager Role**
 >
 >The **ServiceManager** receives the request from the **Application Layer** and connects to the **Binder Proxy** in the **Native Service**. The **Binder Proxy** forwards the request to the **Binder Object** in the **Native Layer** where your **TemperatureService** is running.
+>
+>---------------------------------------
 >
 >4. **Native Services (C++ Services)**
 >
@@ -1221,16 +1222,22 @@ For example, if i have a custom sensor like Temperature sensor
 >- If the service is responsible for a custom sensor, it will query the **HAL** for data.
 >- The **Native Service** could be the **TemperatureService** or something similar that you define, and it’s in charge of interacting with the HAL to fetch the sensor data.
 >
+>-------------------
+>
 >5. **Hardware Abstraction Layer (HAL)**
 >
 >The **HAL** abstracts the hardware interaction. In this case, it abstracts the communication with your **custom temperature sensor** hardware, translating the request for temperature data into something that the hardware understands.
 >
 >- The **HAL** may interact with your custom **hardware driver** (which you've written) to request the sensor's temperature reading.
 >
+>-----------------------------------------------
+>
 >6. **Hardware Driver**
 >
 >The **hardware driver** communicates directly with the **custom temperature sensor**. The driver retrieves the sensor data (e.g., temperature in Celsius or Fahrenheit) and sends it to the **HAL**.
 >
+>------------------------
+
 >7. **Data Flow Back Up the Layers**
 >
 >After the data is retrieved by the **hardware driver**, it flows back up through the following layers:
