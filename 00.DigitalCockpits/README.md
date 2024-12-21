@@ -110,13 +110,13 @@ The digital cockpit is the overarching system that integrates all digital interf
 
 ## 
 
-| Feature               | IVI System                      | Digital Cluster                | Digital Cockpit                    |
-| --------------------- | ------------------------------- | ------------------------------ | ---------------------------------- |
-| **Scope**             | Entertainment and connectivity. | Driver’s critical information. | Unified interface for all systems. |
-| **Primary User**      | Passengers and drivers.         | Driver.                        | Drivers and passengers.            |
-| **Key Functionality** | Media, navigation, apps.        | Speed, warnings, ADAS data.    | Centralized integration.           |
-| **Customization**     | High, for apps and themes.      | Moderate, for driver themes.   | High, across all systems.          |
-| **Connectivity**      | Cloud updates and apps.         | Limited to driving data.       | Cloud, ADAS, and IoT integration.  |
+| Feature           | IVI System                      | Digital Cluster                | Digital Cockpit                    |
+| ----------------- | ------------------------------- | ------------------------------ | ---------------------------------- |
+| **Scope**         | Entertainment and connectivity. | Driver’s critical information. | Unified interface for all systems. |
+| **Primary User**  | Passengers and drivers.         | Driver.                        | Drivers and passengers.            |
+| **Functionality** | Media, navigation, apps.        | Speed, warnings, ADAS data.    | Centralized integration.           |
+| **Customization** | High, for apps and themes.      | Moderate, for driver themes.   | High, across all systems.          |
+| **Connectivity**  | Cloud updates and apps.         | Limited to driving data.       | Cloud, ADAS, and IoT integration.  |
 
 ---
 

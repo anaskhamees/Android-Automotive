@@ -66,6 +66,26 @@ The **Android Kernel** has undergone several enhancements to meet the specific n
 
    -------------------------------------------------------------------
 
+| Feature                     | Linux Kernel                                   | Modified Linux Kernel (Android)                              |
+| --------------------------- | ---------------------------------------------- | ------------------------------------------------------------ |
+| **Kernel Type**             | Monolithic kernel                              | Modified Linux kernel                                        |
+| **Optimization Focus**      | General-purpose computing (servers, desktops)  | Mobile and touchscreen devices                               |
+| **Power Management (PM)**   | Basic power management                         | Advanced power-saving features, including `WakeLock`         |
+| **Memory Management (MMU)** | Traditional memory management                  | Enhanced with `AshMem` and ION memory management             |
+| **Virtual Memory (VM)**     | Standard VM systems                            | Includes Low Memory Killer (`LMK`)                           |
+| **IPC System**              | System V IPC, POSIX IPC, and sockets           | Binder IPC optimized for mobile                              |
+| **Scheduler**               | General-purpose scheduler                      | Modified scheduler optimized for UI responsiveness           |
+| **Hardware Support**        | Generic drivers for a wide range of devices    | Specific drivers for mobile hardware (e.g., touchscreens, sensors) |
+| **Security**                | SELinux and traditional Linux permissions      | SELinux plus app sandboxing, additional cryptographic features |
+| **Hardware Interaction**    | Directly via drivers                           | Through a Hardware Abstraction Layer (HAL)                   |
+| **Standard Library**        | GNU C Library (glibc)                          | Bionic C Library (optimized for low memory and performance)  |
+| **Wakelocks**               | Not available                                  | Prevents devices from sleeping during critical tasks         |
+| **Logging System**          | Persistent system logs (`dmesg`, `journalctl`) | Circular buffer logs with `logcat` for better performance    |
+| **Native Build System**     | Make                                           | Android-specific `ndk-build` and Gradle                      |
+| **Additional Components**   | -                                              | Includes Android-specific features like HAL and service discovery |
+
+![image-20241221204333185](README.assets/image-20241221204333185.png)
+
 - **Role in Android Automotive**:
 
   - Enables hardware integration with the vehicle’s sensors, cameras, audio, and displays.

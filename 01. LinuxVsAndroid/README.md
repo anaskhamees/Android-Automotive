@@ -183,14 +183,57 @@ In Android, **Binder** facilitates communication between:
 - Responsibilities :
 
   - **Device Drivers**: Enable interaction with hardware components (e.g., USB, storage, network interfaces).
-  - **Process Management**: Schedules tasks and manages system resources like CPU and memory.
-  - **File System Management**: Provides support for file systems (e.g., EXT4, FAT, or custom filesystems).
+  - **Process Management**: 
+
+    - Handles process scheduling, creation, termination, and synchronization.
+    - Manages system resources like CPU time and memory.
+    - Includes support for multitasking and thread management.
+  - **File System Management**: 
+
+    - Provides interfaces to interact with various file systems.
+
+    - Examples of supported file systems: EXT4, FAT, NTFS, Btrfs, XFS.
+
+    - Includes Virtual File System (VFS) for abstracting file system operations.
+
   - **Networking**: Manages network protocols and connections.
-  - **MMU (Memory Management Unit)**: Handles memory management for efficient allocation.
+
   - **IPC (Inter-Process Communication)**: Allows processes to communicate and share data.
+
   - **PM (Power Management)**: Manages energy consumption, which is crucial for mobile devices.
+
   - **VM (Virtual Memory)**: Provides memory visualization for efficient use of hardware memory.
 
+    >>**Virtual Memory** is a system that gives each process (running program) its own "virtual" view of memory, even if the actual physical memory (RAM) is limited or shared with other processes.
+    >>
+    >>- **Why is it used?**
+    >>  - **Isolation:** Each process works in its own isolated memory space. One process cannot directly access or corrupt another process's memory.
+    >>  - **Efficiency:** If physical memory is insufficient, the kernel can temporarily move data to the hard disk (using a "swap space").
+    >>  - **Convenience:** The process thinks it has access to a large, continuous block of memory, even though it's scattered across different parts of RAM or disk.
+    >>- **How does it work?**
+    >>  - Instead of directly accessing physical memory, processes access **virtual addresses**.
+    >>  - The kernel maps these virtual addresses to actual **physical memory addresses**.
+    >>  - Example:
+    >>    - Process A thinks it’s accessing memory at address `0x0010`, but this is mapped to physical memory at `0xABC0`.
+    >>    - Process B could also think it’s accessing memory at `0x0010`, but it’s mapped to a completely different physical address.
+
+- **MMU (Memory Management Unit)**: Handles memory management for efficient allocation.
+
+  >- The MMU is a hardware component (built into the CPU) that translates **virtual memory addresses** to **physical memory addresses**.
+  >
+  >**Why is it important?**
+  >
+  >- It enables the virtual memory system to work by performing the translation automatically and quickly.
+  >
+  >**How does it work?**
+  >
+  >- When a process accesses a virtual address, the MMU:
+  >  1. Looks up the **page table** (managed by the kernel).
+  >  2. Translates the virtual address into the corresponding physical address.
+  >  3. Sends the physical address to the CPU to perform the memory operation.
+  
+  
+  
 - The Linux kernel is modular and can be customized for specific embedded applications by including only the necessary drivers and features.
 
   ---------------
@@ -276,7 +319,7 @@ In Android, **Binder** facilitates communication between:
 
 ![](README.assets/AOSPArchi.png)
 
-#### 1.11.2.1. **Modified Linux Kernel (Androism)**:
+#### 1.11.2.1. **Modified Linux Kernel **:
 
 ![image-20241215220539339](README.assets/image-20241215220539339.png)
 
@@ -293,11 +336,11 @@ In Android, **Binder** facilitates communication between:
   >**Low Memory Killer (LMK) in Android**
   >
   >- **Purpose**: The LMK is specifically designed for resource-constrained devices, like smartphones, where running out of memory is common due to limited physical RAM.
-  >- How it Works:
+  >- **How it Works:**
   > - Monitors memory usage continuously.
   > - Proactively terminates background apps or processes when memory falls below certain thresholds to free up memory before the system becomes critically low.
   > - It works alongside a user-space daemon (**lmkd**) to decide which processes should be killed, often based on priorities and app states (e.g., background apps are killed before foreground ones).
-  >- Why Android Needs LMK :
+  >- **Why Android Needs LMK :**
   > - Android devices frequently run multiple apps simultaneously, and switching between apps needs memory.
   > - Killing less important or inactive apps ensures a smooth user experience and prevents crashes due to memory exhaustion.
   >
@@ -312,8 +355,6 @@ In Android, **Binder** facilitates communication between:
   > - Unlike Android's LMK, the OOM Killer does not proactively monitor or terminate processes; it only activates in emergencies.
   >
   >-----------------------------
-
-- **Hardware Abstraction Layer (HAL)**: Android introduces a **Hardware Abstraction Layer** to simplify hardware integration, enabling Android to run on a wide variety of mobile devices with different hardware.
 
 - **ION (Input/Output Memory Manager)**
 

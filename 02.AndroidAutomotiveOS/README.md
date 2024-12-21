@@ -66,6 +66,8 @@ The **Android kernel** is based on the **Linux kernel**. The Android operating s
 
 ------------------------------------------------------------------
 
+![Android Versions List: A Complete Journey From Android 1.0 to 12 (Contd.)](README.assets/Android-Versions-1024x536.jpg)
+
 ## 3. Android Automotive
 
 **Android Automotive OS (AAOS)** is an open-source operating system designed to run directly on a vehicle's hardware. Unlike **Android Auto**, which relies on a smartphone to project content onto the car's infotainment system, Android Automotive is a standalone system embedded within the car itself. This means it manages not only infotainment features but also vehicle-specific systems such as climate control, navigation, and advanced vehicle settings.
@@ -83,8 +85,13 @@ The **Android kernel** is based on the **Linux kernel**. The Android operating s
 ### 3.2. Android Automotive in Vehicles
 
 1. **Volvo**: Volvo was one of the first automakers to integrate **Android Automotive OS** in its vehicles, offering a fully integrated infotainment system powered by AOSP. By customizing Android, Volvo embedded **Google services** such as **Google Assistant**, **Google Maps**, and the **Google Play Store**, directly into their cars. This deep integration allows for personalized in-car experiences, such as tailored climate controls, navigation, and media management. For example, **Google Maps** provides navigation with real-time traffic updates, and **Google Assistant** enables voice commands for hands-free control of various car functions. Since AOSP is open-source, Volvo could opt for third-party alternatives if they chose not to rely on Google services. This flexibility means that if Volvo wanted to, they could replace Google Maps with another navigation app or Google Assistant with a custom voice recognition solution, providing a more independent or customized in-car experience.
+
 2. **General Motors (GM)**: General Motors has also adopted **Android Automotive** in their vehicles, embedding **Google Assistant**, **Google Maps**, and the **Google Play Store** into their infotainment systems. By using **Google Automotive Services (GAS)**, GM offers seamless connectivity with Google’s ecosystem, providing customers with a familiar Android experience, including access to Google’s apps and services. For example, GM vehicles can use **Google Maps** for turn-by-turn navigation and **Google Play Store** for downloading apps directly to the infotainment system. However, GM retains the option to remove Google-specific components if they choose. They could replace Google Maps with their own navigation system or develop a third-party app to replace **Google Assistant**, creating a more independent and customized in-car experience.
+
 3. **Stellantis (Maserati)**: In contrast, Stellantis, the maker of **Maserati**, has chosen to partner with **Amazon** for its in-car services. Instead of integrating **Google Automotive Services (GAS)**, Stellantis uses **Amazon’s Alexa** for voice commands, and other third-party applications for navigation and media management. This partnership enables Stellantis to avoid using Google's ecosystem, opting instead for Amazon’s services like **Alexa** for voice assistance and **Amazon’s app ecosystem** for other vehicle functions. For example, Maserati vehicles might use **Alexa** for controlling media, navigation, and other in-car systems, providing an alternative to **Google Assistant**.
+
+   ![Developing a New Retailer Model in Europe with Our Dealer Network to  Enhance Customer Experience | Corporate Communications | Stellantis](README.assets/a2a7c57253c1b29cc6242d2fc28aa69c017fc923.jpeg)
+
 4. **Renault-Nissan-Mitsubishi Alliance**: The Renault-Nissan-Mitsubishi Alliance has similarly embraced **AOSP** for their vehicles, and while some models include **Google Automotive Services (GAS)**, they have the flexibility to choose whether to integrate Google services. In many cases, the Alliance uses **Google Assistant** and **Google Maps** in their vehicles to provide users with the familiar Android experience. However, AOSP's open-source nature allows the Alliance to remove Google services if needed and implement their own third-party applications. For instance, if the Renault-Nissan-Mitsubishi Alliance chooses not to rely on Google services, they can replace **Google Maps** with custom navigation apps or introduce other third-party voice assistants to suit their vehicles' needs.
 
 ## 4. Android Auto  Vs Android Automotive OS
