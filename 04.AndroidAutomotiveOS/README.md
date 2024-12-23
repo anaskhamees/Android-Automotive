@@ -1,78 +1,29 @@
-#  Android Automotive AAOS
-
-## 1. Android OS
-
-Android is an open-source operating system developed by Google, primarily designed for mobile devices like smartphones and tablets. However, it has expanded to various other platforms, including TVs, wearable devices, and automotive systems. Android’s flexibility, scalability, and customization options make it a popular choice in the embedded systems and automotive industries.
-
-The **Android kernel** is based on the **Linux kernel**. The Android operating system leverages the Linux kernel as its core component, handling the low-level tasks such as **hardware abstraction**, **process management**, **memory management**, **device drivers**, and **networking**. While Android uses the Linux kernel, the rest of the Android OS—such as the application framework, libraries, and runtime—is designed specifically for mobile devices, providing a rich set of APIs and tools for app development.
-
-## 2. Android History
-
-### 2.1. **Early History and Development**
-
-- **2002**: Google co-founders Larry Page and Sergey Brin were inspired by Andy Rubin's **Sidekick phone**.
-
-  ![](https://deaftechcompendium.wordpress.com/wp-content/uploads/2017/05/sidekick.jpg)
-
-- **2003**: Andy Rubin established **Android Inc.** with the goal of creating an open-source mobile OS.
-
-- **2005**: Google acquired **Android Inc.**
-
-- **2007**: The **Android platform** was publicly launched via the **Open Handset Alliance**.
-
-- **2008**: The first Android version launched with the **HTC Dream (T-Mobile G1)**, gaining rapid adoption due to its open-source nature.
-
-  ![](README.assets/g1-open.jpg)
-
-------
-
-### 2.1.1. **Android’s Growth and Expansion**
-
-- **Rapid Evolution (2008–2013)**:
-
-  - Significant updates like **Cupcake**, **Donut**, and **Froyo** introduced multi-touch support, better user interfaces, and faster processing.
-  - Android became the dominant mobile OS with a strong developer community.
-
-- **Adoption in New Devices (2011–2014)**:
-
-  ![image-20241215224411638](README.assets/image-20241215224411638.png)
-
-  - **Tablets**: Introduced with **Honeycomb** (2011).
-  - **TVs**: Android TV launched in 2014.
-  - **Wearables**: Wear OS launched in 2014, creating a versatile Android ecosystem.
-
-------
-
-### 2.1.2. **Android Enters the Automotive Space**
-
-- **Android Auto (2014)**:
-  - Platform launched to connect Android smartphones to car infotainment systems.
-  - Allows access to **Google Maps**, **Google Assistant**, and third-party apps for navigation, music, and communication.
-- **Android Automotive OS (AAOS) (2017)**:
-  - Introduced as a standalone OS embedded directly into vehicles, eliminating the need for a smartphone.
-  - **Volvo** was the first to implement AAOS in 2019 for:
-    - Infotainment systems.
-    - Climate control.
-    - Navigation.
-    - Advanced vehicle features.
-- **Partnerships and Growth (2018–Present)**:
-  - Major manufacturers like **GM**, **Ford**, **Stellantis**, and **Renault-Nissan-Mitsubishi** partnered with Google to integrate AAOS.
-  - AAOS continues to evolve with:
-    - Support for third-party apps.
-    - Integration of **Google services**.
-    - Deeper integration into vehicle systems.
-
-![image-20241215224805589](README.assets/image-20241215224805589.png)
-
-------------------------------------------------------------------
-
-![Android Versions List: A Complete Journey From Android 1.0 to 12 (Contd.)](README.assets/Android-Versions-1024x536.jpg)
-
-## 3. Android Automotive
+#  Android Automotive OS [AAOS]
 
 **Android Automotive OS (AAOS)** is an open-source operating system designed to run directly on a vehicle's hardware. Unlike **Android Auto**, which relies on a smartphone to project content onto the car's infotainment system, Android Automotive is a standalone system embedded within the car itself. This means it manages not only infotainment features but also vehicle-specific systems such as climate control, navigation, and advanced vehicle settings.
 
-### 3.1. Why use Android in Automotive 
+### 1. **Why AAOS Was Developed ?**
+
+Due to **Android Auto** limitations, Google developed **Android Automotive OS (AAOS)**, which provides a **native operating system** that runs directly on the car's head unit. Here's how AAOS overcomes Android Auto’s drawbacks:
+
+1. **Eliminates Smartphone Dependency**
+   - AAOS is installed directly on the car’s hardware, meaning it can operate independently of a smartphone.
+   - The system supports embedded apps, so users don’t need to connect their phones to access infotainment features.
+2. **Deeper Integration with Vehicle Features**
+   - AAOS allows automakers to integrate with vehicle-specific controls (e.g., climate control, seat adjustments, ADAS) using the **Vehicle HAL (Hardware Abstraction Layer)**.
+   - This provides a unified interface for managing all car functions.
+3. **Improved Performance**
+   - AAOS runs on the car’s hardware, ensuring a consistent and smooth user experience that isn’t dependent on phone specifications.
+4. **Enhanced Connectivity**
+   - AAOS supports over-the-air (OTA) updates for software and apps, eliminating the need for a phone to provide updates or new features.
+5. **Customizability for Automakers**
+   - Automakers can customize the AAOS interface and features to align with their brand identity while still leveraging the Android ecosystem.
+6. **Expanded App Ecosystem**
+   - AAOS supports a growing ecosystem of apps, including navigation, media, and even vehicle-specific apps, thanks to the **Google Play Store for AAOS**.
+7. **Unified Experience**
+   - The experience is consistent across cars that use AAOS, reducing fragmentation and ensuring a familiar interface for users switching between vehicles.
+
+### 2. Why use Android in Automotive 
 
 1. **Complete System Integration**: Android Automotive OS enables seamless integration of both automotive-specific and infotainment features. It provides a unified platform for multimedia, vehicle systems, and Google services, offering a rich user experience while managing various car components such as navigation, climate control, and diagnostics. For example, Android Automotive integrates with a car's hardware to control the air conditioning and display the vehicle’s health metrics in real-time.
 2. **Enhanced User Experience**: AAOS supports Google’s suite of services, including **Google Maps**, **Google Assistant**, and the **Google Play Store**. This allows drivers to access navigation, entertainment, and hands-free control through voice commands, enhancing the in-car experience. For instance, a driver can easily request directions, play music, or check the weather through Google Assistant without taking their hands off the wheel.
@@ -82,7 +33,7 @@ The **Android kernel** is based on the **Linux kernel**. The Android operating s
 6. **Broad Ecosystem and Community Support**: The widespread adoption of Android means that the automotive industry can leverage a large pool of skilled developers and a vibrant community of contributors. AOSP benefits from a global network of developers who continue to enhance the platform, making it easier to integrate the latest innovations and ensure that Android Automotive remains up-to-date with new technologies and hardware.
 7. **Control Over Updates and Security**: Since AOSP is open-source, manufacturers have complete control over their system’s updates, feature additions, and security patches. This level of control is particularly important in the automotive sector, where security and reliability are paramount. Automakers can ensure that their systems are secure, compliant with industry standards, and equipped with the latest features, such as real-time software updates or over-the-air (OTA) updates.
 
-### 3.2. Android Automotive in Vehicles
+### 3. Android Automotive in Vehicles
 
 1. **Volvo**: Volvo was one of the first automakers to integrate **Android Automotive OS** in its vehicles, offering a fully integrated infotainment system powered by AOSP. By customizing Android, Volvo embedded **Google services** such as **Google Assistant**, **Google Maps**, and the **Google Play Store**, directly into their cars. This deep integration allows for personalized in-car experiences, such as tailored climate controls, navigation, and media management. For example, **Google Maps** provides navigation with real-time traffic updates, and **Google Assistant** enables voice commands for hands-free control of various car functions. Since AOSP is open-source, Volvo could opt for third-party alternatives if they chose not to rely on Google services. This flexibility means that if Volvo wanted to, they could replace Google Maps with another navigation app or Google Assistant with a custom voice recognition solution, providing a more independent or customized in-car experience.
 
@@ -122,15 +73,6 @@ The car’s screen serves as an interactive display. When you touch the car scre
 - The **phone processes the touch input** and responds by performing actions within the app, such as navigating, playing music, sending a message, or adjusting settings.
 
 **Example**: If you tap the **Google Maps** icon on the car’s screen, it sends a signal to the phone, which opens Google Maps and displays the navigation instructions. If you interact with the map (e.g., zooming in or selecting a route), the phone processes the touch input and updates the map displayed on the car screen.
-
-##### 4.1.1.3. **How Control Works**
-
-The **car screen** acts as a **secondary display**, mirroring the phone’s interface while the phone does all the heavy processing.
-
-- When you interact with the touchscreen in the car, the car system **passes the input to the phone**, which then processes it and updates the interface.
-- For example, if you press a button on the car’s touchscreen to play music through **Spotify**, the signal is sent to the phone, which changes the media playback accordingly, and the car screen reflects the updated status.
-
-**Example**: Pressing the **Spotify** button on the car’s screen sends a signal to the phone, which starts playing music. If you adjust the volume or change the track, the phone processes those inputs and the car screen reflects the changes.
 
 ---------------------------------------
 
@@ -185,7 +127,7 @@ This level of customization is not available with Android Auto, which is designe
 
 
 
-### 5. Why Use **Android Automotive** Instead of **Embedded Linux** in Vehicles ?
+### 5. Why Use **Android Automotive** OS Instead of **Embedded Linux** in Vehicles ?
 
 **Android Automotive** and **Embedded Linux** are both popular platforms used in the development of in-car infotainment systems, but they offer distinct advantages based on the needs of modern automotive applications. Here's a breakdown of why **Android Automotive** might be preferred over **Embedded Linux** in certain situations:
 
