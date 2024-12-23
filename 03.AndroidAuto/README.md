@@ -1,5 +1,5 @@
 # Android Auto
-### 1. What is Android Auto
+### 1. What is Android Auto  ?
 
 Android Auto is a platform that connects an Android-powered smartphone to a vehicle’s **In-Vehicle Infotainment (IVI)** system, enabling a driver-friendly interface for apps such as navigation, media, and communication. It allows users to interact with their phone’s apps using the car's touchscreen, buttons, or voice commands while maintaining focus on the road.
 
@@ -258,3 +258,10 @@ When a phone connects to a car's head unit, the **Android Auto app** becomes the
    - **Issue**: Android Auto is not supported by all cars or head units, and older models often lack the necessary hardware or software updates to enable it.
    - **Impact**: Users with older cars may need to invest in third-party head units to access Android Auto.
 
+----------------------------
+
+### 5. References 
+
+- [Google Developers I/O 2014 Conference](https://www.youtube.com/watch?v=9vjntxXCUNA) 
+- Android Auto Documentation 
+- https://rajasoftwarelabs.com/blog/developing-apps-for-android-auto
