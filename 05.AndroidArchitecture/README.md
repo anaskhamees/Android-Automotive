@@ -509,7 +509,7 @@ Every Android application runs in its own  **own isolated runtime environment**,
 >
 >- While AOT compilation is great for static code, ART also supports **JIT compilation** for dynamic code execution.
 >- During runtime, JIT compiles frequently used bytecode segments into **native code** in real-time to improve performance.
->- Benefits:
+>- **Benefits:**
 >  - Reduces installation time (as less pre-compilation is needed).
 >  - Adapts performance in real time based on usage patterns.
 >- Example:
@@ -525,79 +525,80 @@ Every Android application runs in its own  **own isolated runtime environment**,
 >
 >- **Conversion to DEX (Dalvik Executable):**
 >
->  - The **D8 compiler** (replacing DX) takes the `.class` files and generates a single or multiple **DEX files**.  
+> - The **D8 compiler** (replacing DX) takes the `.class` files and generates a single or multiple **DEX files**.  
 >
->    >The **D8** compiler is a tool used in the Android build system to **convert Java bytecode (.class files) into DEX (Dalvik Executable) bytecode**. It was introduced as a more efficient, faster, and modern replacement for the older **DX compiler**.
->    >
->    >**D8** takes the compiled **Java** or **Kotlin** `.class` files (produced by the `javac` or `kotlinc` compilers) and converts them into **DEX files**, which are the format used by the **Android Runtime (ART)** for executing code on Android devices.
->    >
->    >
+>   >The **D8** compiler is a tool used in the Android build system to **convert Java bytecode (.class files) into DEX (Dalvik Executable) bytecode**. It was introduced as a more efficient, faster, and modern replacement for the older **DX compiler**.
+>   >
+>   >**D8** takes the compiled **Java** or **Kotlin** `.class` files (produced by the `javac` or `kotlinc` compilers) and converts them into **DEX files**, which are the format used by the **Android Runtime (ART)** for executing code on Android devices.
+>   >
+>   >
 >
->  - DEX files contain bytecode that the Android Runtime (ART) can execute.
+> - DEX files contain bytecode that the Android Runtime (ART) can execute.
 >
 >- **App Installation:**
->  - When the app is installed (or at first boot), ART triggers the **`dex2oat` tool** to perform Ahead-of-Time (AOT) compilation.
+> - When the app is installed (or at first boot), ART triggers the **`dex2oat` tool** to perform Ahead-of-Time (AOT) compilation.
 >
 >- **dex2oat Compilation Process:**
 >
->  - `dex2oat` converts the DEX bytecode into highly optimized **native machine code** for the target device architecture (ARM, ARM64, x86, x86_64).
+> - `dex2oat` converts the DEX bytecode into highly optimized **native machine code** for the target device architecture (ARM, ARM64, x86, x86_64).
 >
->  - The compiled native code is stored in **OAT files**.
+> - The compiled native code is stored in **OAT files**.
 >
->    >**Input:** 
->    >
->    > `dex2oat`takes the following as input:
->    >
->    >- **App DEX files:** The compiled bytecode.
->    >- **App Resources:** Manifest, assets, etc.
->    >- **Target Architecture:** CPU architecture (e.g., ARM, ARM64).
->    >
->    >**Compilation:**
->    >
->    >- Intermediate Representation (IR):
->    >
->    >  `dex2oat` translates the DEX bytecode into an intermediate representation (IR) optimized for the target hardware.
->    >
->    >**Optimization:**   Various optimizations are applied, such as:
->    >
->    >- **Inlining:** Reducing function call overhead by embedding function code.
->    >
->    >- **Constant Folding:** Replacing constant expressions with precomputed values.
->    >- **Dead Code Elimination:** Removing unused or unreachable code.
->    >
->    >**Native Machine Code Generation:**
->    >
->    >- The IR is translated into **native machine code** specific to the CPU.
->    >
->    >**Output:**
->    >
->    >- The optimized native code is stored in an **OAT (Optimized Android Executable**) file:
->    >
->    >  ```kotlin
->    >  /data/dalvik-cache/arm64/system@app@dashboard.apk@classes.dex
->    >  ```
->    >
->    >**Verification:**
->    >
->    >- `dex2oat` verifies the integrity of the compiled code and ensures it matches the DEX input.
+>   >**Input:** 
+>   >
+>   > `dex2oat`takes the following as input:
+>   >
+>   >- **App DEX files:** The compiled bytecode.
+>   >- **App Resources:** Manifest, assets, etc.
+>   >- **Target Architecture:** CPU architecture (e.g., ARM, ARM64).
+>   >
+>   >**Compilation:**
+>   >
+>   >- Intermediate Representation (IR):
+>   >
+>   >  `dex2oat` translates the DEX bytecode into an intermediate representation (IR) optimized for the target hardware.
+>   >
+>   >**Optimization:**   Various optimizations are applied, such as:
+>   >
+>   >- **Inlining:** Reducing function call overhead by embedding function code.
+>   >
+>   >- **Constant Folding:** Replacing constant expressions with precomputed values.
+>   >- **Dead Code Elimination:** Removing unused or unreachable code.
+>   >
+>   >**Native Machine Code Generation:**
+>   >
+>   >- The IR is translated into **native machine code** specific to the CPU.
+>   >
+>   >**Output:**
+>   >
+>   >- The optimized native code is stored in an **OAT (Optimized Android Executable**) file:
+>   >
+>   >  ```kotlin
+>   >  /data/dalvik-cache/arm64/system@app@dashboard.apk@classes.dex
+>   >  ```
+>   >
+>   >**Verification:**
+>   >
+>   >- `dex2oat` verifies the integrity of the compiled code and ensures it matches the DEX input.
 >
 >- **OAT File Storage:**
 >
->  - The OAT file is stored in the **/data/dalvik-cache** directory on the device.
+> - The OAT file is stored in the **/data/dalvik-cache** directory on the device.
 >
->  - This directory holds optimized versions of app bytecode for faster execution.
+> - This directory holds optimized versions of app bytecode for faster execution.
 >
 >- **Runtime Execution** : Once the AOT compilation is complete:
 >
->  - The **OAT file** containing native machine code is loaded directly into memory during app startup.
->  - This bypasses both **interpretation** and **JIT compilation**, ensuring faster startup and lower latency.
+> - The **OAT file** containing native machine code is loaded directly into memory during app startup.
+> - This bypasses both **interpretation** and **JIT compilation**, ensuring faster startup and lower latency.
 >
 >```java
->Java/Kotlin Code → javac/Kotlin Compiler → .class Files → D8 Compiler → .dex Files  
->        ↓  
->    dex2oat (AOT Compilation) → Optimized Native Code → OAT Files in /data/dalvik-cache  
->        ↓  
->        App Launch → Native Code Execution (Fast Startup, Minimal Latency)
+>Java/Kotlin Code → javac/Kotlin Compiler → .class Files → D8 Compiler → .dex Files ↓ 
+>    <-------------------------------------<-----------------------------------<--  
+>    ↓  
+> dex2oat (AOT Compilation) → Optimized Native Code → OAT Files in /data/dalvik-cache ↓     <-------------------------------------<-----------------------------------<-----   
+>    ↓  
+>    App Launch → Native Code Execution (Fast Startup, Minimal Latency)
 >
 >```
 >
@@ -607,61 +608,61 @@ Every Android application runs in its own  **own isolated runtime environment**,
 >
 >- Imagine an **infotainment system application** running on Android Automotive.
 >
->  - When you launch the **Navigation app** for the first time, ART uses an **interpreter** to execute code.
+> - When you launch the **Navigation app** for the first time, ART uses an **interpreter** to execute code.
 >
->  - As you interact with the app (e.g., searching locations, zooming the map), ART identifies frequently executed methods (hot paths).
+> - As you interact with the app (e.g., searching locations, zooming the map), ART identifies frequently executed methods (hot paths).
 >
->  - ART **JIT-compiles** those hot methods into native machine code **on the fly** [in RunTime].
+> - ART **JIT-compiles** those hot methods into native machine code **on the fly** [in RunTime].
 >
->  - This ensures that subsequent runs of the same operations (e.g., zooming in/out) are faster and optimized without recompiling the entire application.
+> - This ensures that subsequent runs of the same operations (e.g., zooming in/out) are faster and optimized without recompiling the entire application.
 >
-> ------------------
+>------------------
 >
 >- Consider a **Vehicle Dashboard app** that shows speed, RPM, and other critical information.
 >
->  - Since this app is critical for real-time display and safety, it benefits from **AOT compilation**.
+> - Since this app is critical for real-time display and safety, it benefits from **AOT compilation**.
 >
->  - During installation (or first boot), ART uses a tool like **dex2oat** to compile the app’s DEX bytecode into **native machine code** stored as **OAT files**.
+> - During installation (or first boot), ART uses a tool like **dex2oat** to compile the app’s DEX bytecode into **native machine code** stored as **OAT files**.
 >
->  - At runtime, the compiled code is directly executed, ensuring minimal latency and fast startup times for the dashboard display.
+> - At runtime, the compiled code is directly executed, ensuring minimal latency and fast startup times for the dashboard display.
 >
-> -------------------------
+>-------------------------
 >
->  **Continue ART Features**
+> **Continue ART Features**
 >
->  3. **Garbage Collection (GC)**
+> 3. **Garbage Collection (GC)**
 >
->  - ART introduces optimized **Garbage Collection** to manage memory efficiently.
+> - ART introduces optimized **Garbage Collection** to manage memory efficiently.
 >
->  - The GC process reclaims unused memory by removing objects that are no longer needed,  reducing memory leaks.
+> - The GC process reclaims unused memory by removing objects that are no longer needed,  reducing memory leaks.
 >
->    - Features :
->      - **Concurrent Garbage Collection**: Performs collection without freezing the app completely, ensuring a **smooth user experience**.
->      - **Low-Pause GC**: Minimizes interruptions during critical app operations.
+>   - Features :
+>     - **Concurrent Garbage Collection**: Performs collection without freezing the app completely, ensuring a **smooth user experience**.
+>     - **Low-Pause GC**: Minimizes interruptions during critical app operations.
 >
->    - Benefits:
->      - Reduces app stutter and lag.
->      - Improves memory usage for apps that process large data (e.g., video processing, car diagnostics).
+>   - Benefits:
+>     - Reduces app stutter and lag.
+>     - Improves memory usage for apps that process large data (e.g., video processing, car diagnostics).
 >
->    - Example:
->      - In an **Android Automotive Media System**, ART ensures seamless playback of music/video even as other processes run in the background.
+>   - Example:
+>     - In an **Android Automotive Media System**, ART ensures seamless playback of music/video even as other processes run in the background.
 >
-> ------
+>------
 >
->  4. **Memory Management**
+> 4. **Memory Management**
 >
->  - ART improves **heap memory management**, which is essential for apps running in constrained environments (e.g., car infotainment systems).
+> - ART improves **heap memory management**, which is essential for apps running in constrained environments (e.g., car infotainment systems).
 >
->  - Features :
->    - **Optimized Memory Allocation**: Faster allocation and deallocation of objects.
->    - **Compact Heap**: Reduces fragmentation and optimizes memory usage for smaller RAM devices.
+> - Features :
+>   - **Optimized Memory Allocation**: Faster allocation and deallocation of objects.
+>   - **Compact Heap**: Reduces fragmentation and optimizes memory usage for smaller RAM devices.
 >
->  - Benefits:
->    - Reduces memory overhead, leading to improved app stability.
->    - Efficient resource use for memory-constrained automotive hardware.
+> - Benefits:
+>   - Reduces memory overhead, leading to improved app stability.
+>   - Efficient resource use for memory-constrained automotive hardware.
 >
->  - Example:
->    - A diagnostic app that monitors **engine temperature, fuel levels**, and **RPM** uses memory efficiently to process real-time sensor data.
+> - Example:
+>   - A diagnostic app that monitors **engine temperature, fuel levels**, and **RPM** uses memory efficiently to process real-time sensor data.
 >
 >------
 >
@@ -673,92 +674,92 @@ Every Android application runs in its own  **own isolated runtime environment**,
 >
 >- Benefits:
 >
->  - Improves app responsiveness for features used frequently.
->  - Enhances performance over time without requiring developer intervention.
+> - Improves app responsiveness for features used frequently.
+> - Enhances performance over time without requiring developer intervention.
 >
 >- Example Scenario : **Navigation App in Android Automotive**
 >
->  Imagine you are using a **Navigation App** in an **Android Automotive** environment, where you frequently perform these actions:
+> Imagine you are using a **Navigation App** in an **Android Automotive** environment, where you frequently perform these actions:
 >
->  - Launching the app.
+> - Launching the app.
 >
->  - Searching for a destination.
+> - Searching for a destination.
 >
->  - Zooming in/out on the map.
+> - Zooming in/out on the map.
 >
->  - Switching between "2D" and "3D" views.
+> - Switching between "2D" and "3D" views.
 >
->  When you first install and use the app, the performance may not be fully optimized because ART does not yet know which parts of the code are most frequently executed. But After that :
+> When you first install and use the app, the performance may not be fully optimized because ART does not yet know which parts of the code are most frequently executed. But After that :
 >
->  1. **Profile Data Created:**
->     ART begins tracking method usage and stores this profiling data in a **profile file** (`*.prof`) inside the app’s cache directory.
+> 1. **Profile Data Created:**
+>    ART begins tracking method usage and stores this profiling data in a **profile file** (`*.prof`) inside the app’s cache directory.
 >
->     ```kotlin
->     Method searchDestination - Executed 50 times (HOT)
->     Method zoomMap - Executed 30 times (HOT)
->     Method switchView - Executed 10 times (WARM)
->     ```
->
-> ------
->
->  2. **Idle Time: Optimizing Hot Code Paths**
->
->  - After a period of app usage, when the **car is parked or idle** (low CPU activity), the system enters an idle state.
->  - ART uses the profile file to **AOT-compile hot methods** into optimized native code.
->  - **Compilation Tool:** `dex2oat` generates optimized **OAT (Optimized Android Executable)** files.
->
->  **What Happens Behind the Scenes:**
->
->  - The `searchDestination` and `zoomMap` methods, identified as “hot,” are compiled into **native machine code**.
->  - Less frequently used methods like `switchView` remain in interpreted or JIT-compiled form.
->
->  **Optimized Methods:**
->
->  ```c++
->  searchDestination → Optimized native code
->  zoomMap → Optimized native code
->  ```
->
-> ------
->
->  3. **Subsequent Runs: Faster Performance**
->
->  - On the next launch of the **Navigation App**, ART loads the precompiled native code for the **hot methods** (`searchDestination` and `zoomMap`) directly.
->  - This bypasses interpretation or JIT compilation, leading to:
->    - Faster **startup time**.
->    - Improved **responsiveness** when frequently used features are triggered.
->
->  **Example Interaction Results:**
->
->  - Searching for a destination now executes the optimized native version of `searchDestination`, reducing latency.
->  - Zooming in/out on the map feels much smoother due to optimized `zoomMap`.
->
-> ------
->
->  4. **Continuous Adaptation: Evolving Profile Data**
->
->  - As you continue to use the app, ART dynamically updates the **profile file**.
->
->  - For example, if you start frequently switching between "2D" and "3D" views:
->
->    ```c
->    Method switchView - HOT (now executed 50 times)
+>    ```kotlin
+>    Method searchDestination - Executed 50 times (HOT)
+>    Method zoomMap - Executed 30 times (HOT)
+>    Method switchView - Executed 10 times (WARM)
 >    ```
 >
->  - During the next idle period, ART recompiles `switchView` into optimized native code.
+>------
 >
->  **Result:**
+> 2. **Idle Time: Optimizing Hot Code Paths**
 >
->  - ART continuously adapts to your app usage patterns, ensuring the most-used features remain highly optimized.
+> - After a period of app usage, when the **car is parked or idle** (low CPU activity), the system enters an idle state.
+> - ART uses the profile file to **AOT-compile hot methods** into optimized native code.
+> - **Compilation Tool:** `dex2oat` generates optimized **OAT (Optimized Android Executable)** files.
 >
-> ------
+> **What Happens Behind the Scenes:**
 >
->  5. **Benefits Observed Over Time:**
+> - The `searchDestination` and `zoomMap` methods, identified as “hot,” are compiled into **native machine code**.
+> - Less frequently used methods like `switchView` remain in interpreted or JIT-compiled form.
 >
->  - **Improved App Responsiveness:** Hot methods execute faster.
->  - **Efficient CPU Usage:** Less JIT compilation at runtime reduces CPU load.
->  - **Battery Efficiency:** Optimized code consumes less power.
->  - **Seamless Adaptation:** ART automatically improves app performance without developer intervention.
+> **Optimized Methods:**
+>
+> ```c++
+> searchDestination → Optimized native code
+> zoomMap → Optimized native code
+> ```
+>
+>------
+>
+> 3. **Subsequent Runs: Faster Performance**
+>
+> - On the next launch of the **Navigation App**, ART loads the precompiled native code for the **hot methods** (`searchDestination` and `zoomMap`) directly.
+> - This bypasses interpretation or JIT compilation, leading to:
+>   - Faster **startup time**.
+>   - Improved **responsiveness** when frequently used features are triggered.
+>
+> **Example Interaction Results:**
+>
+> - Searching for a destination now executes the optimized native version of `searchDestination`, reducing latency.
+> - Zooming in/out on the map feels much smoother due to optimized `zoomMap`.
+>
+>------
+>
+> 4. **Continuous Adaptation: Evolving Profile Data**
+>
+> - As you continue to use the app, ART dynamically updates the **profile file**.
+>
+> - For example, if you start frequently switching between "2D" and "3D" views:
+>
+>   ```c
+>   Method switchView - HOT (now executed 50 times)
+>   ```
+>
+> - During the next idle period, ART recompiles `switchView` into optimized native code.
+>
+> **Result:**
+>
+> - ART continuously adapts to your app usage patterns, ensuring the most-used features remain highly optimized.
+>
+>------
+>
+> 5. **Benefits Observed Over Time:**
+>
+> - **Improved App Responsiveness:** Hot methods execute faster.
+> - **Efficient CPU Usage:** Less JIT compilation at runtime reduces CPU load.
+> - **Battery Efficiency:** Optimized code consumes less power.
+> - **Seamless Adaptation:** ART automatically improves app performance without developer intervention.
 >
 >------------------------
 >
@@ -774,10 +775,6 @@ Every Android application runs in its own  **own isolated runtime environment**,
 >| **Multi-Architecture Support**  | Supports ARM, x86, and MIPS architectures for broad compatibility. | Ensures compatibility with diverse **automotive processors**. |
 >
 >
-
-**Example**:
-
-- If the user interacts with **Google Assistant** for hands-free commands like “Navigate to the nearest gas station,” ART executes the required Android app code in real time.
 
 ------------------------
 
@@ -829,7 +826,9 @@ Every Android application runs in its own  **own isolated runtime environment**,
 >   - AOT reduces the need for runtime compilation, resulting in **faster app launches** and **improved battery life**.
 >   - However, the tradeoff is that app installations take longer because the bytecode is compiled during this process.
 
-#### -----------------------------------------------------------------------------------------------------------------------Core Libraries
+#### -----------------------------------------------------------------------------------------------------------------------
+
+#### Core Libraries
 
 The **core libraries** are an essential component that provide fundamental functionality required for developing Android applications. These libraries enable Android applications to leverage the Java programming language and offer core APIs similar to standard Java libraries while being optimized for Android's unique runtime environment.
 
