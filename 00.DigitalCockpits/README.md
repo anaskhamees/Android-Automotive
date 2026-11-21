@@ -5,7 +5,7 @@
 > marked **Verified in source**.
 
 **Prerequisites:** none. This is the first chapter.
-**Next:** [Linux vs Android](../01.%20LinuxVsAndroid/README.md).
+**Next:** [Linux vs Android](../01.LinuxVsAndroid/README.md).
 
 **After this chapter you should be able to:**
 
