@@ -46,7 +46,6 @@
 - [5. Summary comparison table](#5-summary-comparison-table)
 - [6. Why Android (AAOS) for automotive infotainment — and its limits](#6-why-android-aaos-for-automotive-infotainment--and-its-limits)
 - [7. Common misconceptions](#7-common-misconceptions)
-- [8. Summary and knowledge check](#8-summary-and-knowledge-check)
 
 ---
 
@@ -218,6 +217,223 @@ crypto (**OpenSSL**, or **BoringSSL** on Android), media (**FFmpeg**, **GStreame
   **dedicated ECUs with real-time/safety-certified OSes**, not on the infotainment Linux/Android
   system ([§6](#6-why-android-aaos-for-automotive-infotainment--and-its-limits)).
 
+### 2.9 How the user-space pieces cooperate: applications, services, libraries
+
+The layers above can also be drawn from the point of view of a running system. User space holds
+three kinds of things, and the **system call interface** is the only way into the kernel:
+
+```mermaid
+flowchart TB
+    subgraph US["User space"]
+        APP["Applications"]
+        SVC["Services (daemons)"]
+        LIB["Libraries<br/>(incl. the C library)"]
+    end
+    SCI{{"System call interface<br/>open · read · write · ioctl · poll · close"}}
+    subgraph KS["Kernel space"]
+        DRV["Drivers"]
+        BASE["Linux OS base<br/>MMU · VM · PM · IPC"]
+    end
+    HW["Hardware"]
+    APP -- "IPC" --> SVC
+    APP -- "function calls" --> LIB
+    SVC -- "function calls" --> LIB
+    LIB -- "system calls" --> SCI
+    SCI --> DRV
+    SCI --> BASE
+    DRV --> HW
+```
+
+Applications call libraries **directly**, and reach a service only over **IPC** (sockets, D-Bus,
+pipes). Services call libraries too. Only library code (in the end, the C library) executes system
+calls.
+
+**Three terms that are often mixed up (General concept):**
+
+| Term | What it is | Lives where |
+|---|---|---|
+| **Daemon** | A **background process** with no controlling terminal, usually started at boot and running for the life of the system. By convention its name ends in **`d`** (`sshd`, `crond`, `systemd`, `cupsd`) | A running process in user space |
+| **Service** | The **managed unit** an init system supervises: a daemon **plus** the rules for starting, stopping, restarting and ordering it. In systemd these are `*.service` files | Config + the process it governs |
+| **Library** | Passive code **linked into** a process (`libssl`, `libc`). It never runs on its own; someone has to call it | Loaded into another process's address space |
+
+> **Rule of thumb:** a **library** is code you *call*. A **daemon** is a process that *runs on its
+> own and waits*. A **service** is a daemon *plus the init system's management of it*.
+
+**Why daemons exist.** Some resources are **shared** or **long-lived** and should not be owned by
+any single short-lived app: network configuration, the print queue, audio mixing, scheduled jobs,
+incoming SSH connections. A daemon is the always-on **owner and arbiter** of such a resource. Apps
+talk to it over IPC instead of doing the work themselves.
+
+**How a classic daemon detaches itself ("daemonizes"):**
+
+```text
+fork() ─▶ parent exits (the shell gets its prompt back)
+   └─▶ setsid()          leave the controlling terminal, become session leader
+        └─▶ chdir("/")   do not keep a mounted filesystem busy
+             └─▶ close stdin/stdout/stderr, reopen them to /dev/null or a log
+                  └─▶ main loop: wait for work (socket / timer / signal) forever
+```
+
+Under systemd, most daemons skip these steps and simply stay in the foreground; systemd itself
+does the supervision.
+
+**Managing services on a systemd distribution:**
+
+```bash
+systemctl start  bluetooth      # start the service now
+systemctl enable bluetooth      # start it automatically at every boot
+systemctl status sshd           # is the daemon running? show recent logs
+journalctl -u  cups             # read one service's logs
+```
+
+**Daemons you meet every day:**
+
+| Daemon | Resource it owns |
+|---|---|
+| `systemd` (PID 1) | Boots the machine, supervises every other service |
+| `sshd` | Incoming SSH connections |
+| `NetworkManager` | Network interfaces, Wi-Fi, connectivity |
+| `systemd-journald` | System logs |
+| `cupsd` | Print jobs |
+| `crond` | Scheduled jobs |
+| `dbus-daemon` | The D-Bus message bus that other services talk over |
+
+Android keeps exactly this idea (background processes that own a shared resource and are reached
+over IPC) but replaces systemd and D-Bus. See [§4.3](#43-init-and-user-space).
+
+#### Worked example: Bluetooth from an app down to the radio
+
+A common teaching slide traces `bluetoothctl` → "systemd-bluetooth" → libbluetooth → C library →
+`open("/dev/rfcomm0")` → RFCOMM driver → UART driver → Bluetooth module. The idea (each layer only
+talks to the one below) is right, but two names need correcting (General concept, BlueZ):
+
+- the daemon is **`bluetoothd`** (BlueZ). `bluetooth.service` is the systemd unit that starts it;
+- `bluetoothd` talks to the kernel through **Bluetooth sockets** (`socket(AF_BLUETOOTH, …)`), not
+  through `/dev/rfcomm0`. `/dev/rfcommN` TTYs exist only for legacy serial-port use (`rfcomm bind`).
+
+| Layer | Component | How it reaches the next layer |
+|---|---|---|
+| App | `bluetoothctl` | **D-Bus** (IPC) to the daemon |
+| Service | `bluetoothd` (started by `bluetooth.service`) | Calls libraries |
+| Library | BlueZ helpers (`lib/bluetooth.c`), glibc | **System calls** on `AF_BLUETOOTH` sockets |
+| Kernel | Bluetooth core: HCI, L2CAP, RFCOMM protocol layers | Calls the transport driver |
+| Kernel | HCI transport driver: `hci_uart` (UART) or `btusb` (USB) | Drives the bus |
+| Hardware | Bluetooth controller | Radio |
+
+```mermaid
+flowchart TB
+    app["App: bluetoothctl"] -->|"IPC: D-Bus"| svc["Service: bluetoothd"]
+    svc -->|"function calls"| lib["Libraries: BlueZ lib, glibc"]
+    lib -->|"system calls: socket(AF_BLUETOOTH), read, write"| core["Kernel: HCI / L2CAP / RFCOMM"]
+    core --> tr["Kernel: hci_uart or btusb driver"]
+    tr -->|"UART / USB"| hw["Bluetooth controller"]
+```
+
+> On Android the same job is split differently: the Bluetooth stack runs in the
+> `com.android.bluetooth` app process (`packages/modules/Bluetooth/`), which reaches the controller
+> through the **Bluetooth HAL** (`hardware/interfaces/bluetooth/aidl/`) (Verified in source).
+
+### 2.10 Three everyday flows
+
+The pattern is always the same: **an app never touches hardware directly.** It calls a library,
+which may talk to a service over IPC, which crosses the system call interface into a driver. The
+result travels back up the same chain.
+
+#### Flow A: saving a file in a text editor (`gedit`)
+
+| Layer | What happens |
+|---|---|
+| **App**: gedit | The user clicks *Save*; gedit has the text in memory |
+| **Library**: GTK/GLib, then glibc | `fopen()` / `fwrite()` buffer the data |
+| **System calls** | `open()`, `write()`, `fsync()`, `close()` |
+| **Kernel**: VFS → ext4 → block layer → NVMe driver | VFS picks the filesystem; ext4 turns bytes into blocks |
+| **Hardware**: SSD | Blocks are written |
+
+```mermaid
+sequenceDiagram
+    participant U as User
+    participant App as gedit
+    participant Lib as GTK / glibc
+    participant K as Kernel (VFS → ext4 → NVMe)
+    participant HW as SSD
+    U->>App: click "Save"
+    App->>Lib: fwrite(buffer)
+    Lib->>K: write() system call
+    K->>HW: write blocks
+    HW-->>K: done
+    K-->>Lib: bytes written
+    Lib-->>App: success
+    App-->>U: "Saved"
+```
+
+#### Flow B: playing a video in VLC (two services, two drivers)
+
+VLC decodes the file into raw audio (PCM) and raw video frames. The audio goes to the **audio
+server** and the video to the **display server**. Each server is the arbiter that shares one device
+among all apps.
+
+| Layer | Component | Role |
+|---|---|---|
+| **App** | VLC | Demuxes the container, decodes audio and video |
+| **Library** | FFmpeg (`libavcodec`, `libavformat`) | Codecs |
+| **Library** | `libpipewire` / `libpulse` (audio), Wayland/EGL (video) | Client APIs to reach each server |
+| **Service (IPC)** | PipeWire / PulseAudio | Mixes every app's audio into one stream |
+| **Service (IPC)** | Wayland compositor / X server | Composites every app's window |
+| **Library** | ALSA `libasound`, Mesa | Used by the servers to reach the kernel |
+| **System calls** | `ioctl()`/`write()` on `/dev/snd/*`, `ioctl()` on `/dev/dri/*` | Hand PCM and frames to drivers |
+| **Kernel** | ALSA sound driver, DRM/KMS GPU driver | Drive the codec and the display |
+| **Hardware** | Audio codec + speaker, GPU + panel | Sound and picture |
+
+```mermaid
+sequenceDiagram
+    participant App as VLC
+    participant Snd as PipeWire (audio server)
+    participant Disp as Wayland compositor
+    participant Ka as ALSA driver
+    participant Kv as DRM/KMS driver
+    App->>App: FFmpeg decodes → PCM + frames
+    par audio
+        App->>Snd: PCM over a socket
+        Snd->>Ka: write()/ioctl() on /dev/snd
+    and video
+        App->>Disp: frames (Wayland IPC + shared buffers)
+        Disp->>Kv: ioctl() on /dev/dri
+    end
+```
+
+> **Why a service?** Without these daemons only one app could own the sound card or the screen at a
+> time. Android has the same arbiters: **audioserver** (AudioFlinger) for sound and
+> **SurfaceFlinger** for the display ([Android Architecture §4](../05.AndroidArchitecture/README.md#4-native-layer-libraries-and-daemons)).
+
+#### Flow C: a browser loads a web page
+
+| Layer | Component | Role |
+|---|---|---|
+| **App** | Firefox | Wants `https://example.com` |
+| **Library** | glibc `getaddrinfo()`, a TLS library | Name lookup + encryption |
+| **Service (IPC)** | `systemd-resolved` | Resolves the host name to an IP address |
+| **System calls** | `socket()`, `connect()`, `send()`, `recv()` | Open and use the connection |
+| **Kernel** | TCP/IP stack → netfilter → NIC driver | Packets on the wire |
+| **Hardware** | Wi-Fi / Ethernet card | Transmit and receive |
+
+```mermaid
+sequenceDiagram
+    participant App as Firefox
+    participant DNS as systemd-resolved
+    participant K as Kernel TCP/IP stack
+    participant NIC as Network card
+    App->>DNS: resolve example.com (IPC)
+    DNS-->>App: IP address
+    App->>K: connect() + send() system calls
+    K->>NIC: TCP/IP packets
+    NIC-->>K: response packets
+    K-->>App: HTML bytes
+```
+
+**Takeaway:** apps use **libraries** for convenience and **services** for anything shared (audio,
+display, DNS, Bluetooth). The system call interface is the single guarded gate into the kernel, and
+only **drivers** touch hardware.
+
 ---
 
 ## 3. Android architecture in one picture
@@ -228,8 +444,32 @@ Android keeps the **Linux kernel** at the bottom and replaces everything above i
 
 **HAL → native daemons and libraries (bionic) → ART → Java framework and system services → apps.**
 
-The full layer-by-layer explanation is in [Android Architecture](../05.AndroidArchitecture/README.md).
-The rest of this chapter compares the two systems **topic by topic**.
+**Linux and Android side by side.** The same comparison as a stack:
+
+```mermaid
+flowchart LR
+    subgraph LNX["Linux"]
+        direction TB
+        L1["Applications"] --- L2["Services"] --- L3["Libraries"] --- L4{{"System call interface"}} --- L5["Drivers"] --- L6["Linux OS base<br/>MMU · VM · PM · IPC"]
+    end
+    subgraph AND["Android"]
+        direction TB
+        A1["Applications"] --- A2["Android API"] --- A3["Android framework"] --- A4["Android system services"] --- A5["Android runtime (ART)"] --- A6["Hardware Abstraction Layer (HAL)"] --- A7["Linux native daemons and libraries"] --- A8{{"System call interface"}} --- A9["Device drivers + Binder"] --- A10["Android kernel changes"] --- A11["Linux OS base<br/>MMU · VM · PM · IPC"]
+    end
+    LNX -- "kernel kept,<br/>user space replaced" --> AND
+```
+
+- **Who works where:** app developers work at the top (applications, using the Android API).
+  Platform (AOSP) engineers own everything from the framework down to the kernel.
+- **"Android kernel changes":** older Changes"+wakelocks, +ashmem, +sched,
+  −SysVIPC". Most of those were upstreamed or replaced (wakeup sources, memfd, upstream scheduler
+  features). Binder is the main Android-specific driver left. See [§4.1](#41-kernel) and
+  [§4.7](#47-memory-management-and-low-memory-handling).
+- **Stack order vs process view:** a stack shows code dependencies, not which process code runs in.
+  For example, the framework runs partly in apps and partly in `system_server`, and ART is loaded into
+  each Java process ([Android Architecture §1](../05.AndroidArchitecture/README.md#1-the-stack-layers-vs-processes)).
+
+The full layer-by-layer explanation is in [Android Architecture](../05.AndroidArchitecture/README.md). The rest of this chapter compares the two systems **topic by topic**.
 
 ---
 
@@ -261,7 +501,19 @@ space. They are covered in the sections below and in
 **Why Android wrote its own:**
 
 1. **License:** BSD allows linking into proprietary vendor code without LGPL obligations.
+
+   >BSD is a permissive open-source license.
+   >
+   >It generally allows you to:
+   >
+   >- Use the source code commercially.
+   >- Modify the source code.
+   >- Redistribute the source code.
+   >- Link it into proprietary applications and libraries.
+   >- Distribute binaries without publishing your application's source code.
+
 2. **Size and speed:** a smaller footprint for mobile/embedded devices.
+
 3. **Android features:** system properties (`__system_property_get`), Android-specific security
    hardening, and **linker namespaces** that keep vendor and system libraries apart (Treble).
 
@@ -277,6 +529,104 @@ software must be patched to build for Android.
 | Extra duties | — | Property service, SELinux policy load, `ueventd` |
 
 Android's `init` is covered in depth in [Boot Sequence §4](../07.AndroidBootingSequence/README.md#4-init--the-first-user-space-process).
+
+#### Linux daemons in Android
+
+Android keeps the daemon idea from [§2.9](#29-how-the-user-space-pieces-cooperate-applications-services-libraries)
+but changes three things:
+
+1. **No systemd.** The supervisor is Android's own `init`, and services are declared in **`.rc`**
+   files in the Android Init Language instead of `*.service` unit files.
+2. **Binder instead of D-Bus.** Most Android daemons register a name with **`servicemanager`** and
+   are called over **Binder**. Unix sockets are still used where they fit (`logd`, `lmkd`, Zygote).
+3. **Two kinds of "service".** **Native daemons** are separate C/C++ processes started by `init`.
+   **Java system services** (ActivityManagerService, PackageManagerService…) are objects **inside the
+   `system_server` process**, not separate processes.
+
+**A service declaration on each system.** systemd unit:
+
+```ini
+# /lib/systemd/system/food.service
+[Service]
+ExecStart=/usr/bin/food
+Restart=always
+```
+
+Android `.rc` service, the real `vold` entry (Verified: `system/vold/vold.rc`):
+
+```bash
+service vold /system/bin/vold \
+        --blkid_context=u:r:blkid:s0 --blkid_untrusted_context=u:r:blkid_untrusted:s0 \
+        --fsck_context=u:r:fsck:s0 --fsck_untrusted_context=u:r:fsck_untrusted:s0
+    class core
+    ioprio be 2
+    task_profiles ProcessCapacityHigh
+    shutdown critical
+    group root reserved_disk
+    user root
+    reboot_on_failure reboot,vold-failed
+```
+
+| systemd | Android |
+|---|---|
+| `systemctl start vold` | `start vold` (in an `.rc` action), or `adb shell start vold` as root |
+| `systemctl status vold` | `getprop init.svc.vold` → `running` / `stopped` / `restarting` |
+| `Restart=always` | Services restart by default unless marked `oneshot`; `onrestart` lists side effects |
+
+```bash
+$ adb shell getprop init.svc.vold
+running
+```
+
+**Core native daemons** (Verified in source unless noted):
+
+| Daemon | Resource it owns | Reached via | Example |
+|---|---|---|---|
+| `init` | PID 1: starts and supervises all others | — | Restarts a crashed daemon |
+| `servicemanager` | The **Binder name registry** | Binder | Clients look up `"car_service"`, `"package"`… here |
+| `vold` | Storage: mounting volumes, encryption | Binder (`IVold.aidl`) | Insert an SD card → `vold` mounts it, StorageManagerService is told |
+| `netd` | Interfaces, routing, firewall, DNS rules | Binder (`INetd`) | Turning Wi-Fi on → the framework asks `netd` to set routes |
+| `logd` | The log buffers | Unix sockets `logd`, `logdr`, `logdw` | `adb logcat` reads from `logd` |
+| `adbd` | The device end of the Android Debug Bridge | USB / TCP | `adb shell`, `adb install` |
+| `installd` | App data directories and app files under `/data` | Binder (`IInstalld.aidl`) | Creating an app's data directory (`createAppData`) at install |
+| `surfaceflinger` | Display composition | Binder | Every frame on screen |
+| `lmkd` | Killing processes under memory pressure | Unix socket | Memory pressure → a cached app is killed ([§4.7](#47-memory-management-and-low-memory-handling)) |
+| `storaged` | Disk I/O statistics and health | Binder | Storage stats in Settings (General concept) |
+
+> **Corrections to common lists:** `installd` is reached over **Binder**, not a socket (it was a
+> socket before Android 8). There is **no `bluetoothd`** on Android: the Bluetooth stack runs in the
+> `com.android.bluetooth` app process. `zygote` is also an `init` service
+> ([Boot §5](../07.AndroidBootingSequence/README.md#5-zygote)).
+
+**Worked example: installing an APK.** Several processes cooperate, each with only the privilege it
+needs:
+
+| Step | Who | Does what |
+|---|---|---|
+| 1 | `adbd` (native daemon) | Receives the APK from the PC. Modern `adb install` streams it through **abb** (Android Binder Bridge, `packages/modules/adb/daemon/abb.cpp`) straight to the `package` service |
+| 2 | PackageManagerService (Java, in `system_server`) | Stages the APK, verifies signature and permissions |
+| 3 | `installd` (native daemon) | Creates the app's data directories with the right UID and SELinux label (`createAppData`) |
+| 4 | ART Service / `artd` | Compiles the app's code (dexopt) ([Android Architecture §5.2](../05.AndroidArchitecture/README.md#52-from-source-code-to-running-code)) |
+| 5 | PackageManagerService | Registers the app; it appears in the launcher |
+
+```mermaid
+sequenceDiagram
+    participant PC as adb (host PC)
+    participant adbd as adbd
+    participant PMS as PackageManagerService<br/>(system_server)
+    participant inst as installd
+    participant artd as artd
+    PC->>adbd: adb install app.apk
+    adbd->>PMS: stream APK (abb → "package" service)
+    PMS->>PMS: verify signature and permissions
+    PMS->>inst: createAppData (Binder)
+    PMS->>artd: dexopt (Binder)
+    PMS-->>PC: Success
+```
+
+**Why split it up?** The same reason as on desktop Linux: privilege separation. `installd` has the
+rights to create files for any app UID, but `system_server` never needs those raw filesystem
+privileges itself.
 
 ### 4.4 Scheduling
 
@@ -352,7 +702,7 @@ for example with a semaphore, to avoid races.
 >   disallowed by SELinux" (Verified: `bionic/libc/include/sys/shm.h`, around line 66).
 > - "Binder enables communication … between different devices" is **wrong**. Binder is
 >   **local-only** (same kernel). Cross-device communication uses networking, for example gRPC as in
->   the Cuttlefish VHAL ([AAOS §6](../06.AndroidAutomotiveArchitecture/README.md#6-your-two-builds-cuttlefish-vs-raspberry-pi-5)).
+>   the Cuttlefish VHAL ([AAOS §6](../06.AndroidAutomotiveArchitecture/README.md#6-my-two-builds-cuttlefish-vs-raspberry-pi-5)).
 
 ### 4.6 Hardware access
 
@@ -476,7 +826,7 @@ administrators and are often permissive.
 | **SELinux enforcing everywhere** | Partially enforced in 4.4, **fully enforced since Android 5.0** for all domains (Official documentation) |
 | **seccomp** | Filters which syscalls app processes may make |
 | **Permissions** | Install-time and **runtime** (user-granted, since 6.0) permissions, checked by system services |
-| **Verified Boot (AVB) + dm-verity** | System partitions are cryptographically verified ([Boot §2.3](../07.AndroidBootingSequence/README.md#23-android-verified-boot-avb--explained-from-zero)) |
+| **Verified Boot (AVB) + dm-verity** | System partitions are cryptographically verified ([Secure Boot and AVB](../07.AndroidBootingSequence/SECURE_BOOT_AVB.md)) |
 | **Encryption** | File-based encryption (FBE) of `/data` |
 | **Crypto** | BoringSSL / Conscrypt |
 

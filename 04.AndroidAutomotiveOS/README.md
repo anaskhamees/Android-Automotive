@@ -1,703 +1,421 @@
 # Android Automotive OS (AAOS)
 
-Android Automotive OS (AAOS) is Google's open-source operating system for vehicles. Unlike Android Auto, which projects applications from a smartphone to a vehicle's infotainment display, AAOS runs **directly on the vehicle's hardware** as the car's native operating system.
+> **Evidence:** platform claims were checked against **AOSP `android-17.0.0_r1`** (paths given).
+> Market and OEM information is **external and changes quickly**. It was checked against public
+> sources in November 2026 (listed at the end), and each OEM's current status should be confirmed on
+> Google's official "Google built-in" pages before you rely on it.
 
-Because it runs natively inside the vehicle, AAOS can provide traditional infotainment features such as navigation, media playback, and voice assistance while also integrating with vehicle systems like climate control, seat adjustments, cameras, and other vehicle-specific functions through standardized automotive interfaces.
+| Label | Meaning |
+|---|---|
+| **Verified in source** | Read in the AOSP 17 tree |
+| **Official documentation** | source.android.com / developer.android.com / OEM press release |
+| **External (market)** | Press/industry reporting; may change |
 
-AAOS is built on top of the **Android Open Source Project (AOSP)**, allowing vehicle manufacturers (OEMs) to customize the operating system according to their branding and hardware requirements.
+**Prerequisites:** [Digital Cockpits](../00.DigitalCockpits/README.md), [Android Auto](../03.AndroidAuto/README.md).
+**Next:** [Android Architecture](../05.AndroidArchitecture/README.md) → [AAOS Architecture](../06.AndroidAutomotiveArchitecture/README.md).
 
-------
+**After this chapter you should be able to:**
 
-# 1. Understanding the Android Automotive Ecosystem
+1. Separate **AOSP**, **AAOS** and **GAS** precisely, and say what is open source and what is licensed.
+2. Explain why AAOS was created and what it adds to AOSP, with the real source directories.
+3. Compare Android Auto and AAOS on every important dimension.
+4. Explain the two deployment models (with and without GAS) using real OEM examples.
 
-One of the most common sources of confusion is the relationship between **AOSP**, **Android Automotive OS (AAOS)**, and **Google Automotive Services (GAS)**. Although they are closely related, they are not the same.
+---
+
+## Table of Contents
+
+- [0. What is AAOS?](#0-what-is-aaos)
+- [1. AOSP vs AAOS vs GAS](#1-aosp-vs-aaos-vs-gas)
+- [2. Why AAOS was created](#2-why-aaos-was-created)
+- [3. Why automakers choose AAOS](#3-why-automakers-choose-aaos)
+- [4. Android Auto vs Android Automotive OS](#4-android-auto-vs-android-automotive-os)
+- [5. AAOS in production vehicles](#5-aaos-in-production-vehicles)
+- [6. Common misconceptions](#6-common-misconceptions)
+
+---
+
+## 0. What is AAOS?
+
+**Android Automotive OS (AAOS)** is a version of Android that runs **directly on the vehicle's
+infotainment hardware** as the car's own operating system. **Android Auto**, by contrast, runs on
+your phone and *projects* a UI onto the car screen ([Android Auto](../03.AndroidAuto/README.md)).
+
+Because AAOS runs natively in the car, it can:
+
+- provide normal infotainment: media, navigation, voice, apps;
+- integrate with **vehicle functions** (climate, seats, vehicle settings, cameras) through a
+  standard vehicle interface, the **Vehicle HAL**;
+- be fully **branded and customized** by the car maker (OEM).
+
+AAOS is built from **AOSP** (the open-source Android code base). The automotive parts are open source too ([§1.2](#12-android-automotive-os-aaos)).
+
+---
+
+## 1. AOSP vs AAOS vs GAS
+
+This is the most common source of confusion. They are related but **not the same thing**.
 
 ```text
                  Android Open Source Project (AOSP)
+                      open source, all device types
                               │
                               ▼
                  Android Automotive OS (AAOS)
+          AOSP + automotive components (also open source)
                               │
              ┌────────────────┴────────────────┐
              │                                 │
              ▼                                 ▼
-      Without Google Apps           With Google Automotive Services
-                                      (Google Maps, Assistant,
-                                           Play Store, etc.)
+      AAOS without GAS                  AAOS + Google Automotive Services (GAS)
+  (OEM / 3rd-party services)            ("Google built-in": Maps, Assistant,
+                                          Play Store, Play services — licensed)
 ```
 
-## 1.1 Android Open Source Project (AOSP)
+### 1.1 Android Open Source Project (AOSP)
 
-The **Android Open Source Project (AOSP)** is the open-source foundation of Android maintained by Google.
+**What:** the open-source Android code base: kernel integration, `init`, native daemons, ART,
+framework, system services, HAL interfaces, core apps, build system and tests.
 
-It provides:
+**Open source:** yes. Anyone can download, modify and build it. AAOS is built on it.
 
-- The Linux kernel integration
-- Android Framework
-- System services
-- Application runtime
-- Hardware Abstraction Layer (HAL)
-- Basic Android applications
+Details: [Android Architecture](../05.AndroidArchitecture/README.md).
 
-AOSP is completely open source and can be customized by device manufacturers.
+### 1.2 Android Automotive OS (AAOS)
 
-AAOS itself is built on top of AOSP.
+**What:** AOSP **plus** the automotive components, enabled by building an automotive product. The
+automotive pieces are **open source in AOSP** (Verified in source):
 
-------
+| Component | What it does | AOSP location |
+|---|---|---|
+| **Car API** (`android.car`) | Java APIs for apps: vehicle properties, power, UX restrictions… | `packages/services/Car/car-lib/` |
+| **CarService** | Automotive system service process | `packages/services/Car/service/`, `service-builtin/` |
+| **CarServiceHelperService** | Glue inside `system_server` | `frameworks/opt/car/services/` |
+| **Vehicle HAL** (interface + reference impl) | The car as standard **vehicle properties** | `hardware/interfaces/automotive/vehicle/` |
+| **Driver distraction / UX restrictions** | Limits UI while driving | `.../service/src/com/android/car/CarUxRestrictionsManagerService.java` |
+| **Multi-display / occupant zones** | Driver, passenger and rear-seat displays and users | `.../CarOccupantZoneService.java` |
+| **Car audio** | Audio zones, volume groups, focus for car sounds | `.../service/src/com/android/car/audio/CarAudioService.java` |
+| **Car power management** | Vehicle power states, suspend/hibernation, power policies | `.../power/CarPowerManagementService.java`, `packages/services/Car/cpp/power/` |
+| **EVS (Exterior View System)** | Fast rear-view / surround cameras | `packages/services/Car/cpp/evs/` |
+| **Projection support** | Lets AAOS act as an Android Auto *receiver* when the OEM integrates it | `.../CarProjectionService.java` |
+| **Car system apps** | CarLauncher, CarSystemUI, CarSettings, SystemUpdater… | `packages/apps/Car/` |
 
-## 1.2 Android Automotive OS (AAOS)
+**How a build becomes "automotive" (Verified in source):** automotive products inherit
+`packages/services/Car/car_product/build/car_base.mk`. Line 105 installs
+`android.hardware.type.automotive.xml`, which declares the **`android.hardware.type.automotive`**
+feature. `SystemServer` checks that feature to start CarServiceHelperService
+([Boot §7](../07.AndroidBootingSequence/README.md#7-aaos-specific-how-carservice-is-started)).
+Ready-made automotive targets in AOSP include `sdk_car_x86_64` and `sdk_car_arm64` (emulator,
+`device/generic/car/`), Cuttlefish auto, and your RPi5 `aosp_rpi5_car`.
 
-Android Automotive OS is an automotive-focused implementation of Android that runs directly on the vehicle's hardware.
+**No smartphone required.** Apps execute on the vehicle's own processor.
 
-AAOS extends AOSP by adding automotive-specific components, including:
+### 1.3 Google Automotive Services (GAS)
 
-- Vehicle APIs
-- Car Service
-- Vehicle Hardware Abstraction Layer (Vehicle HAL or VHAL)
-- Driver distraction management
-- Multi-display support
-- Automotive audio management
-- Automotive power management
+**What:** an **optional, proprietary, licensed** package of Google apps and services for AAOS
+vehicles, marketed as **"Google built-in"**. It typically includes:
 
-Unlike Android Auto, AAOS does **not** require a connected smartphone.
+- **Google Maps**;
+- **Google Assistant** (being replaced by Gemini in newer releases, External);
+- **Google Play Store** (car-optimized apps);
+- **Google Play services**.
 
-Applications execute directly on the vehicle's processors, making the infotainment system independent of the driver's mobile device.
+**GAS is not part of AOSP.** You will not find it in your source trees. An OEM must sign an
+agreement with Google and pass compatibility testing (CTS etc.) to ship it.
 
-------
+**A vehicle can run AAOS without any Google apps**: see the BMW example in
+[§5.5](#55-aaos-without-gas-examples).
 
-## 1.3 Google Automotive Services (GAS)
+---
 
-Google Automotive Services (GAS) is an **optional** collection of proprietary Google applications and services that manufacturers can license for vehicles running AAOS.
+## 2. Why AAOS was created
 
-GAS typically includes:
+**The situation before:** Android Auto ([chapter 03](../03.AndroidAuto/README.md)) brought phone
+apps into cars by **projecting** the phone's UI. That works well for navigation, media and messaging,
+but it has structural limits:
 
-- Google Maps
-- Google Assistant
-- Google Play Store
-- Google Play Services
+| Limitation of projection | Consequence |
+|---|---|
+| Depends on a connected, compatible phone | No phone, low battery or a bad cable means no apps |
+| OEM controls little of the UX | The UI looks the same in every brand |
+| Apps cannot access vehicle functions | Climate, seats and vehicle settings stay in a separate OEM system |
+| Performance depends on the phone | Old phones give a laggy experience |
+| Two systems on screen | The driver switches between Android Auto and the car's native UI |
 
-It is important to understand that **Google Automotive Services is not part of AOSP**.
+**What changed:** cars became **software-defined** with digital cockpits
+([chapter 00](../00.DigitalCockpits/README.md)). OEMs needed a full, maintainable OS on the head
+unit itself, with a modern app platform.
 
-A vehicle can run Android Automotive OS without any Google applications.
+**The AAOS idea:** instead of treating the car as an **external display**, treat the **car itself
+as the Android device**. The infotainment SoC runs Android, and vehicle functions are reached through a
+standard, permission-controlled interface (VHAL → CarService → Car API).
 
-For example:
+---
 
-- Volvo and Polestar license Google Automotive Services.
-- Some manufacturers choose alternative navigation systems, voice assistants, or application stores instead of Google's ecosystem.
+## 3. Why automakers choose AAOS
 
-This flexibility is one of AAOS's biggest strengths.
+### 3.1 Native vehicle integration through a standard interface
 
-------
+The **Vehicle HAL** represents the car as standard **vehicle properties** with fixed IDs, types and
+units (Verified in source,
+`hardware/interfaces/automotive/vehicle/aidl_property/android/hardware/automotive/vehicle/VehicleProperty.aidl`):
 
-# 2. Why Android Automotive OS Was Created
+| Vehicle function | Example property |
+|---|---|
+| Climate control / cabin temperature | `HVAC_TEMPERATURE_SET`, `HVAC_FAN_SPEED` |
+| Doors | `DOOR_LOCK` |
+| Speed | `PERF_VEHICLE_SPEED` |
+| Gear | `GEAR_SELECTION` |
+| Ignition | `IGNITION_STATE` |
+| Identity | `INFO_VIN` |
 
-Android Auto successfully brought smartphone applications into vehicles by projecting a simplified interface from the driver's phone onto the infotainment display.
+Instead of every OEM inventing its own interface, apps and services use one architecture.
+Deep dive: [AAOS Architecture §3](../06.AndroidAutomotiveArchitecture/README.md#3-vehicle-properties-in-depth).
 
-Although this approach works well for navigation, communication, and media playback, it has several limitations:
+### 3.2 Familiar development platform (two different audiences)
 
-- It depends on a connected smartphone.
-- Vehicle manufacturers have limited control over the user experience.
-- Applications cannot directly control vehicle functions.
-- Performance depends on the connected phone.
-- Offline functionality is limited when the phone is unavailable.
+| Audience | Tools | Notes |
+|---|---|---|
+| **App developers** (third-party or OEM apps) | Android Studio, Kotlin/Java, **Gradle**, Android SDK, the `android.car` library, the androidx **Car App Library**, the AAOS emulator, `adb` | Same skills as phone apps, plus car UX rules |
+| **Platform developers** (OEM / Tier-1 engineers building the OS) | AOSP source, **Soong (Android.bp) + Make**, `lunch`/`m`, Cuttlefish, CTS/VTS, `adb`, `fastboot` | Gradle is **not** used to build the platform |
 
-As vehicles evolved into software-defined platforms with increasingly sophisticated digital cockpits, manufacturers required a complete operating system capable of running directly on the vehicle itself.
+### 3.3 Rich application ecosystem
 
-Android Automotive OS was created to meet these requirements.
+- **With GAS:** Google Maps, Google Assistant and the Play Store with car-optimized apps.
+- **Without GAS:** the OEM provides its own navigation, voice assistant and app store, for example
+  through a third-party store provider ([§5.5](#55-aaos-without-gas-examples)).
 
-Instead of treating the car as an external display, AAOS treats the vehicle as the Android device.
+### 3.4 Customizable user experience
 
-This enables the operating system to interact with vehicle hardware through standardized automotive interfaces while providing a modern application platform for developers.
+OEMs can customize nearly everything: launcher, system UI, themes, settings, cluster integration,
+media, navigation, voice and brand identity. Two AAOS cars can look completely different while
+sharing the same platform. The customization points are open source in `packages/apps/Car/`
+(Launcher, SystemUI, Settings), with resource overlays (RROs) for theming.
 
-------
+### 3.5 Over-the-air (OTA) updates
 
-# 3. Why Automakers Choose Android Automotive
+AOSP includes the update stack: **A/B (seamless) updates** with `update_engine` (`system/update_engine/`)
+and a car **SystemUpdater** app (`packages/apps/Car/SystemUpdater/`). OEMs deliver security patches,
+features, fixes and app updates without a dealer visit. **How** updates are downloaded, scheduled and
+authorized (for example only while parked) is the OEM's backend and policy.
 
-Modern vehicles are essentially distributed computer systems containing dozens of Electronic Control Units (ECUs). Manufacturers require an operating system that is scalable, secure, customizable, and capable of integrating infotainment with vehicle functions.
+### 3.6 Long-term maintainability
 
-Android Automotive provides these capabilities while leveraging the maturity of the Android ecosystem.
+- A mature, documented architecture with large community knowledge;
+- regular Android platform releases and monthly security bulletins;
+- **Treble/VINTF** separation of vendor and system ([Android Architecture §3](../05.AndroidArchitecture/README.md#3-hardware-abstraction-layer-hal)),
+  so the platform can be upgraded with less vendor rework.
 
-## 3.1 Native Vehicle Integration
+This matters because cars stay on the road for 10–15 years, much longer than phones.
 
-AAOS communicates with vehicle hardware through the **Vehicle Hardware Abstraction Layer (Vehicle HAL)**.
+---
 
-This allows applications and system services to access standardized vehicle properties such as:
+## 4. Android Auto vs Android Automotive OS
 
-- Climate control
-- Cabin temperature
-- Seat position
-- Door status
-- Fuel or battery level
-- Vehicle speed
-- Gear position
-- Steering wheel controls
+A simple way to remember:
 
-Instead of every manufacturer implementing different interfaces for these features, AAOS provides a common software architecture.
-
-------
-
-## 3.2 Familiar Android Development Platform
-
-Because AAOS is based on Android, developers can continue using familiar tools including:
-
-- Android Studio
-- Kotlin
-- Java
-- Gradle
-- Android SDK
-- Android Debug Bridge (ADB)
-
-This significantly reduces the learning curve for Android developers entering the automotive industry.
-
-------
-
-## 3.3 Rich Application Ecosystem
-
-Vehicles that license **Google Automotive Services** gain access to applications such as Google Maps, Google Assistant, and the Google Play Store.
-
-Manufacturers that do not license GAS can instead integrate their own navigation systems, voice assistants, application stores, or third-party services.
-
-This flexibility allows OEMs to balance user experience, branding, licensing costs, and regional requirements.
-
-------
-
-## 3.4 Customizable User Experience
-
-Unlike Android Auto, where the user interface is largely controlled by Google, AAOS allows manufacturers to customize nearly every aspect of the in-vehicle experience.
-
-OEMs can customize:
-
-- Launcher
-- System UI
-- Themes
-- Vehicle settings
-- Instrument cluster integration
-- Media applications
-- Navigation
-- Voice assistant
-- Brand identity
-
-As a result, two vehicles running AAOS may look completely different while sharing the same underlying Android platform.
-
-------
-
-## 3.5 Over-the-Air (OTA) Updates
-
-AAOS supports modern software maintenance through Over-the-Air (OTA) updates.
-
-Manufacturers can deliver:
-
-- Security patches
-- Feature updates
-- Bug fixes
-- New applications
-- Performance improvements
-
-without requiring customers to visit a dealership.
-
-------
-
-## 3.6 Long-Term Maintainability
-
-Because AAOS is based on Android, manufacturers benefit from:
-
-- A mature software architecture
-- Regular Android platform improvements
-- A large global developer community
-- Continuous security updates
-- Extensive documentation and development tools
-
-This reduces development effort while enabling long-term software maintenance throughout the vehicle's lifecycle.
-
------------------------------------------------------------------------------------------------------------------------------------
-
-# 4. Android Auto vs Android Automotive OS
-
-Although **Android Auto** and **Android Automotive OS (AAOS)** share the Android name and are both developed by Google, they are fundamentally different technologies designed to solve different problems.
-
-A simple way to think about them is:
-
-- **Android Auto** extends your **smartphone** into your car.
+- **Android Auto** extends your **phone** into the car.
 - **Android Automotive OS** turns the **car itself into an Android device**.
 
-Understanding this distinction is essential before learning Android Automotive development.
+### 4.1 Android Auto (projection)
 
-------
+The OS and apps run on the **phone**. The car screen is mainly a **display and input device**.
 
-# 4.1 Android Auto
-
-Android Auto is a **projection-based platform** that allows an Android smartphone to display a driver-optimized interface on a vehicle's infotainment screen.
-
-The operating system continues to run on the **smartphone**, while the vehicle primarily acts as an external display and input device.
-
-The phone is responsible for:
-
-- Running applications
-- Processing user input
-- Accessing mobile data
-- GPS navigation
-- Media playback
-- Voice recognition
-
-The vehicle is responsible for:
-
-- Displaying the interface
-- Sending touch input
-- Forwarding button events
-- Providing microphone and speaker access
-
-Because all application logic runs on the smartphone, disconnecting the phone immediately stops Android Auto.
-
-------
-
-## 4.1.1 How Android Auto Works
-
-The communication flow is illustrated below.
+| Phone does | Car head unit does |
+|---|---|
+| Runs the apps, processes input, uses mobile data and GPS, plays media, does voice recognition, **renders the UI** | **Shows** the projected video, **sends** touch/knob/button input, provides **microphone/speakers** and car sensor data |
 
 ```text
 ┌───────────────────────────────┐
-│        Android Phone          │
-│                               │
-│  • Android Auto Framework     │
-│  • Google Maps                │
-│  • Spotify                    │
-│  • WhatsApp                   │
-│  • Google Assistant           │
+│ Android phone                 │
+│  Android Auto app + apps      │
+│  (Maps, Spotify, WhatsApp…)   │
 └───────────────┬───────────────┘
-                │
-          USB / Wi-Fi
-                │
+                │  USB or Wi-Fi (Android Auto protocol)
                 ▼
 ┌───────────────────────────────┐
-│ Vehicle Infotainment Display  │
-│                               │
-│  Receives UI                  │
-│  Displays Graphics            │
-│  Sends Touch Events           │
+│ Car head unit                 │
+│  receiver software:           │
+│  displays video, sends input, │
+│  routes audio                 │
 └───────────────────────────────┘
 ```
 
-The car is **not running** Google Maps or Spotify.
+**Interaction flow:**
 
-Instead, those applications execute entirely on the smartphone.
+1. The driver taps "Navigate" on the car screen.
+2. The car sends the touch event to the phone.
+3. The phone launches/updates Google Maps and **renders** the new screen.
+4. The phone sends the frame back as **video**, and the car displays it.
 
-------
+The car **never executes** Google Maps itself. Disconnecting the phone ends the session.
 
-## 4.1.2 User Interaction Flow
+**Advantages:** uses the driver's own apps and accounts, needs no Google agreement for app content in
+the car, and apps stay in sync with the phone.
+**Limitations:** see [§2](#2-why-aaos-was-created) and [chapter 03 §4](../03.AndroidAuto/README.md#4-drawbacks-of-android-auto).
 
-When the driver interacts with the infotainment screen:
+### 4.2 Android Automotive OS (native)
 
-1. The driver touches the vehicle display.
-2. The infotainment system sends the touch event to the phone.
-3. The phone processes the event.
-4. The application updates its interface.
-5. The updated interface is transmitted back to the vehicle.
-
-For example:
-
-```
-Driver touches "Navigate"
-
-        ↓
-
-Car sends touch event
-
-        ↓
-
-Phone launches Google Maps
-
-        ↓
-
-Phone renders navigation screen
-
-        ↓
-
-Updated interface appears on vehicle display
-```
-
-The vehicle never executes Google Maps itself.
-
-------
-
-## 4.1.3 Advantages of Android Auto
-
-- Familiar Android experience
-- Uses the driver's existing applications
-- No dedicated vehicle hardware required
-- Navigation uses the phone's internet connection
-- Applications stay synchronized with the phone
-
-------
-
-## 4.1.4 Limitations of Android Auto
-
-Because Android Auto depends on the smartphone, it has several limitations.
-
-- Requires a compatible Android phone
-- Requires USB or wireless connectivity
-- Performance depends on the smartphone
-- Limited access to vehicle hardware
-- Cannot deeply integrate with vehicle systems
-- Stops working if the phone disconnects
-
-Android Auto was designed to safely extend smartphone applications into the vehicle—not to control the vehicle itself.
-
-------
-
-# 4.2 Android Automotive OS (AAOS)
-
-Android Automotive OS is a **complete operating system** installed directly on the vehicle.
-
-Instead of projecting applications from a phone, the applications execute natively on the vehicle's processors.
-
-The vehicle becomes an Android device.
-
-This enables AAOS to manage both infotainment features and selected vehicle functions.
-
-Applications can interact with vehicle services through automotive APIs, while lower software layers communicate with vehicle hardware through the **Vehicle Hardware Abstraction Layer (VHAL)**.
-
-------
-
-## 4.2.1 How AAOS Works
-
-Unlike Android Auto, everything executes inside the vehicle.
+Everything executes **in the car**. The correct process view (Verified in source; details in
+[AAOS Architecture §0](../06.AndroidAutomotiveArchitecture/README.md#0-the-big-picture)):
 
 ```text
-┌───────────────────────────────┐
-│ Android Automotive Apps       │
-│                               │
-│ Navigation                    │
-│ Media                         │
-│ Settings                      │
-│ Vehicle Apps                  │
-└───────────────┬───────────────┘
-                │
-                ▼
-┌───────────────────────────────┐
-│ Android Framework             │
-└───────────────┬───────────────┘
-                │
-                ▼
-┌───────────────────────────────┐
-│ Automotive System Services    │
-│ (Car Service, Audio, etc.)    │
-└───────────────┬───────────────┘
-                │
-                ▼
-┌───────────────────────────────┐
-│ Vehicle HAL (VHAL)            │
-└───────────────┬───────────────┘
-                │
-                ▼
-┌───────────────────────────────┐
-│ Vehicle ECUs                  │
-│ HVAC │ Seats │ Doors │ Battery│
-└───────────────────────────────┘
+┌───────────────────────────────────────────────┐
+│ App process (e.g. CarSystemUI HVAC panel)     │
+│   app code + Car API library (android.car)    │
+└───────────────────────┬───────────────────────┘
+                        │ Binder IPC
+                        ▼
+┌───────────────────────────────────────────────┐
+│ CarService process (com.android.car)          │
+│   permission checks, CarPropertyService, …    │
+└───────────────────────┬───────────────────────┘
+                        │ Binder IPC (IVehicle AIDL)
+                        ▼
+┌───────────────────────────────────────────────┐
+│ Vehicle HAL process (vendor)                  │
+└───────────────────────┬───────────────────────┘
+                        │ vendor-specific (MCU / gateway / CAN / Ethernet)
+                        ▼
+┌───────────────────────────────────────────────┐
+│ Vehicle ECUs: HVAC │ seats │ doors │ battery  │
+└───────────────────────────────────────────────┘
 ```
 
-Every component runs locally on the vehicle.
+> Car API is **not** a separate layer below the app. It is a **library inside the app's process**, and CarService is a **separate process**, not part of the generic "Android Framework" box.
 
-A smartphone is optional rather than required.
+**Smartphones are optional.** An AAOS car can still use a phone for:
 
-------
+- Bluetooth calls, contacts and messages (`packages/apps/Car/` Dialer/Messenger + Bluetooth profiles);
+- media streaming;
+- **Android Auto or Apple CarPlay projection**, *if the OEM integrates a receiver*. AOSP provides
+  hooks such as `CarProjectionService`, but the Android Auto receiver itself is a Google component.
 
-## 4.2.2 Vehicle Integration
+**Advantages:** native execution, deep vehicle integration, OEM-customizable UX, automotive APIs,
+independence from phones, multi-display, OTA for the whole system.
+**Challenges:** more capable (and costly) head-unit hardware, long validation, OEM responsibility for
+**years** of updates, and integration with many ECUs through the VHAL.
 
-One of the biggest advantages of AAOS is its ability to communicate with vehicle hardware.
+### 4.3 Comparison table
 
-Typical vehicle functions include:
+| Feature | Android Auto | Android Automotive OS |
+|---|---|---|
+| Where the OS and apps run | Phone | Vehicle |
+| Phone required | ✅ Yes | ❌ No (optional) |
+| USB/Wi-Fi link to phone | Required | Not required |
+| Access to vehicle functions | Very limited (some sensor data for apps like navigation) | Yes, through Car API → CarService → **VHAL**, permission-controlled |
+| Uses vehicle compute | Minimal (decode video, input) | Full (runs the OS) |
+| Works without a phone | No | Yes |
+| Google Maps | From the phone | Native, **only if GAS is licensed** |
+| Play Store | On the phone | In the car, **only with GAS** |
+| OEM customization | Limited (Google-defined UI) | Extensive |
+| Updates | Via phone app updates | Vehicle OTA (system + apps) |
+| Source code | Proprietary (Google app + receiver SDK) | **Open source** platform (AOSP), GAS proprietary |
+| Primary purpose | Smartphone projection | Native vehicle OS |
 
-- Climate control
-- Seat adjustment
-- Steering wheel buttons
-- Camera systems
-- Instrument cluster
-- Battery status
-- Fuel level
-- Vehicle speed
-- Door status
-- Lighting controls
+---
 
-Rather than communicating directly with hardware, applications use Android Automotive APIs.
+## 5. AAOS in production vehicles
 
-Those APIs communicate with **Car Service**, which accesses vehicle properties through the **Vehicle HAL (VHAL)**.
+> **External (market) information, checked November 2026.** Model availability varies by **market,
+> model year and trim**. Always confirm with the OEM or Google's "Google built-in" pages.
 
-This architecture separates application developers from hardware-specific implementations.
+### 5.1 Two deployment models
 
-------
+**Model 1: AAOS + GAS ("Google built-in").** Typical features: Google Maps, Google Assistant or
+Gemini, Play Store, Play services. Users get a familiar Google experience, and the OEM signs a Google
+agreement.
 
-## 4.2.3 Smartphone Support
-
-AAOS does **not** require a smartphone.
-
-However, smartphones can still be connected for additional functionality such as:
-
-- Bluetooth calls
-- Contact synchronization
-- Media streaming
-- Android Auto (if supported by the manufacturer)
-- Apple CarPlay (if supported)
-
-This means a vehicle running AAOS may still support Android Auto, but the two technologies operate independently.
-
-------
-
-## 4.2.4 Advantages of AAOS
-
-- Native execution on vehicle hardware
-- Deep vehicle integration
-- Highly customizable user interface
-- Automotive-specific APIs
-- OTA software updates
-- Independent of smartphones
-- Supports multiple displays
-- Designed for long-term vehicle software maintenance
-
-------
-
-## 4.2.5 Limitations
-
-AAOS also introduces new challenges.
-
-- Requires significantly more powerful vehicle hardware
-- Higher development cost
-- Longer validation and certification process
-- Responsibility for long-term software maintenance
-- OEMs must integrate with numerous vehicle ECUs
-
-Despite these challenges, AAOS has become the preferred platform for many modern software-defined vehicles.
-
-------
-
-# 4.3 Android Auto vs Android Automotive OS
-
-| Feature                       | Android Auto          | Android Automotive OS                  |
-| ----------------------------- | --------------------- | -------------------------------------- |
-| Runs on                       | Smartphone            | Vehicle                                |
-| Smartphone Required           | ✅ Yes                 | ❌ No                                   |
-| Processing Location           | Smartphone            | Vehicle                                |
-| Requires USB/Wi-Fi            | Usually Yes           | No                                     |
-| Can Control Vehicle Functions | Limited               | Yes (through automotive APIs and VHAL) |
-| Uses Vehicle Hardware         | Minimal               | Extensive                              |
-| Works Without Phone           | No                    | Yes                                    |
-| Can Run Google Maps           | Via Phone             | Native app (if GAS is licensed)        |
-| Supports Google Play Store    | No                    | Optional (through GAS)                 |
-| OEM Customization             | Limited               | Extensive                              |
-| Supports OTA Updates          | Phone updates apps    | Vehicle software and apps              |
-| Primary Purpose               | Smartphone projection | Native vehicle operating system        |
-
---------------------------------------------------------------------------------------------------------------
-
-# 5. Android Automotive OS in Production Vehicles
-
-Android Automotive OS (AAOS) has been adopted by an increasing number of automotive manufacturers. Although every manufacturer builds on the same Android platform, the resulting infotainment systems can differ significantly.
-
-Some manufacturers license **Google Automotive Services (GAS)** to provide Google Maps, Google Assistant, and the Google Play Store, while others choose to build their own ecosystem using third-party or proprietary services.
-
-This flexibility is one of AAOS's greatest strengths.
-
-------
-
-# 5.1 Two Deployment Models
-
-Before looking at specific manufacturers, it is important to understand that there are two common ways to deploy AAOS.
-
-## Option 1: AAOS + Google Automotive Services (GAS)
-
-In this model, the vehicle runs Android Automotive OS and includes Google's proprietary automotive services.
-
-Typical features include:
-
-- Google Maps
-- Google Assistant
-- Google Play Store
-- Google Play Services
-- Google Voice Search
-
-This provides an experience that feels familiar to Android users.
+**Model 2: AAOS without GAS.** The OEM provides its own (or partners') navigation, voice assistant,
+app store and cloud services, and keeps full control of branding, data and regional providers.
 
 ```text
-      Android Automotive OS
-               │
-               ▼
-      Google Automotive Services
-               │
-      Google Maps
-      Google Assistant
-      Google Play Store
+   Model 1                         Model 2
+ Android Automotive OS          Android Automotive OS
+          │                              │
+ Google Automotive Services      OEM / partner services
+  Maps · Assistant/Gemini         navigation (e.g. HERE, TomTom)
+  Play Store · Play services      voice (e.g. Cerence, Alexa)
+                                  app store (e.g. third-party store)
 ```
 
-------
+### 5.2 Volvo Cars
 
-## Option 2: AAOS Without GAS
+Among the first adopters of AAOS **with GAS**. Google built-in first appeared in the **Volvo XC40
+Recharge** and **Polestar 2**, both launched in the second half of **2020** (External). Volvo now
+offers it across many models (XC40, XC60, XC90, S60, S90, EX30, EX90 and others), with climate,
+vehicle settings, navigation and media in one UI, and regular OTA updates.
 
-Manufacturers may also deploy AAOS without licensing Google Automotive Services.
+### 5.3 Polestar
 
-In this case, they typically provide:
+Polestar was created as Volvo's performance brand and became a standalone EV maker within the Geely
+group. The **Polestar 2** was the **first production car with Google built-in** (2020, External).
+Polestar remains a close partner and often demonstrates new AAOS capabilities. Recent reporting
+mentions **Gemini** coming to its vehicles.
 
-- Their own navigation system
-- Their own voice assistant
-- Their own application store
-- Third-party cloud services
-- Customized infotainment applications
+> **Correction:** the previous version of chapter 02 said "Volvo was the first to implement AAOS in
+> 2019". Production vehicles with Google built-in shipped in **2020**. The first was the **Polestar 2**,
+> closely followed by the Volvo XC40 Recharge.
 
-This approach gives manufacturers complete control over branding, user experience, and regional service providers.
+### 5.4 Other OEMs using Google built-in (External)
 
-```text
-      Android Automotive OS
-               │
-               ▼
-      Manufacturer Services
-               │
-      Navigation
-      Voice Assistant
-      App Store
-      Connected Services
-```
+- **General Motors:** Google built-in in many **model year 2022+** Chevrolet, GMC, Cadillac and
+  Buick vehicles, branded per brand.
+- **Renault Group:** Mégane E-Tech, Austral, Scénic E-Tech and others, branded **OpenR Link**.
+- **Honda:** starting with the **Accord** and the **Prologue**.
+- **Ford / Lincoln:** announced Google apps and services in future vehicles from 2023. Rollout scope
+  has been described as limited so far.
+- **Geely group:** extending Google built-in from Volvo and Polestar to more group brands.
+- Others such as **Nissan** and **Mitsubishi** in some models and markets.
 
-------
+### 5.5 AAOS without GAS: examples
 
-# 5.2 Volvo Cars
+- **BMW:** **BMW Operating System 9** is built on **AOSP** (BMW press release). Its "Shared Service
+  Layer" stays Linux-based, it does **not** use Google services, and its app store is provided by
+  **Aptoide** (External).
+- **Lucid Air:** reported to use AAOS **without** GAS (External).
+- Reporting also lists **Audi, Porsche, Stellantis, Mini** and others among brands using AAOS-based
+  systems without the full GAS package, or with only some Google apps (External; varies by model and
+  market).
+- **China and other regions where Google services are unavailable:** OEMs ship AAOS (or other
+  Android-based systems) with local maps, voice and stores (General concept).
 
-Volvo was one of the first major manufacturers to adopt Android Automotive OS in production vehicles.
+> **Correction:** the previous version listed Audi, Porsche and Lucid under "manufacturers using AAOS"
+> together with GAS adopters. Current reporting places them in the **without-GAS** (or partial) group.
 
-Its infotainment system is built on AAOS and includes **Google Automotive Services**, giving drivers access to:
+### 5.6 Why OEMs choose differently
 
-- Google Maps
-- Google Assistant
-- Google Play Store
+| Consideration | AAOS + GAS | AAOS without GAS |
+|---|---|---|
+| Google Maps | ✓ | Alternative (HERE, TomTom, own) |
+| Voice assistant | Google Assistant / Gemini | Alternative (Cerence, Alexa, own) |
+| App store | Google Play | OEM/third-party store |
+| Google Play services | ✓ | Not included |
+| User experience | Familiar Google ecosystem | Fully OEM-defined |
+| Licensing | Google agreement + compatibility requirements | No Google licensing for services |
+| Data and branding control | Shared with Google services | Maximum OEM control |
+| Regional fit | Not where Google services are unavailable | Adaptable to any region |
 
-Because the operating system is deeply integrated with the vehicle, users can control functions such as climate settings, navigation, media, and vehicle settings from a unified interface.
+Neither is inherently better. The choice depends on strategy, markets, customer expectations,
+existing software investment and partnerships.
 
-Examples include:
+---
 
-- XC40 Recharge
-- C40 Recharge
-- EX30
-- EX90
-- XC60 (newer model years)
+## 6. Common misconceptions
 
-Volvo also receives over-the-air software updates that continuously improve the infotainment experience.
+| Misconception | Correct interpretation |
+|---|---|
+| "AAOS and Android Auto are the same." | Android Auto = **projection from a phone**. AAOS = **the car's own OS**. |
+| "AAOS = Google Maps + Play Store in the car." | Those come from **GAS**, an optional licensed layer. AAOS itself is open source. |
+| "AAOS automotive code is proprietary." | CarService, the Car API, the VHAL interface, EVS and the car apps are in **AOSP** (`packages/services/Car`, `hardware/interfaces/automotive`, `packages/apps/Car`). |
+| "Apps in AAOS can control the car freely." | Every vehicle access goes through CarService permission checks, and SELinux blocks direct VHAL access ([AAOS Architecture §7](../06.AndroidAutomotiveArchitecture/README.md#7-security-permissions-and-selinux)). |
+| "You build AAOS with Gradle." | Apps use Gradle. The **platform** is built with Soong/Make from AOSP. |
+| "An AAOS car cannot use Android Auto." | It can, if the OEM integrates the Android Auto receiver. They are independent technologies. |
 
-------
-
-# 5.3 Polestar
-
-Polestar, which originated as Volvo's performance brand before becoming a standalone manufacturer, also uses Android Automotive OS with Google Automotive Services.
-
-The **Polestar 2** was one of the first production vehicles designed around AAOS.
-
-Its infotainment system demonstrates how Android Automotive can provide a modern, responsive user experience while maintaining deep integration with vehicle systems.
-
-Features include:
-
-- Native Google Maps navigation
-- Google Assistant
-- Google Play Store
-- OTA software updates
-- Integrated vehicle settings
-
-Polestar has become one of Google's closest automotive partners and is often used to demonstrate new AAOS capabilities.
-
-------
-
-# 5.4 General Motors (GM)
-
-General Motors announced a long-term partnership with Google to bring Android Automotive OS to multiple vehicle brands.
-
-Many recent GM vehicles include:
-
-- Android Automotive OS
-- Google Maps
-- Google Assistant
-- Google Play Store
-
-Brands include:
-
-- Chevrolet
-- GMC
-- Cadillac
-- Buick
-
-GM customizes the user interface to match each vehicle brand while continuing to use Android as the underlying operating system.
-
-------
-
-# 5.5 Renault Group
-
-The Renault Group, including Renault, Dacia, and Alpine, has adopted Android Automotive OS for many of its newer vehicles.
-
-Several models include Google Automotive Services, allowing drivers to use familiar Google applications directly from the infotainment system.
-
-The Renault implementation demonstrates one of AAOS's key advantages:
-
-Although every manufacturer starts with the same Android platform, each can create a unique user interface and driving experience.
-
-------
-
-# 5.6 Other Manufacturers Using AAOS
-
-The adoption of Android Automotive continues to grow across the automotive industry.
-
-Manufacturers that have announced or deployed AAOS in at least some vehicle platforms include:
-
-- Honda
-- Nissan
-- Mitsubishi
-- Ford
-- Lincoln
-- Porsche
-- Audi
-- Lucid Motors
-
-Not every model from these manufacturers uses AAOS. Deployment varies by vehicle platform, model year, and market.
-
-------
-
-# 5.7 Manufacturers That Do Not Use Google Automotive Services
-
-Although Google Automotive Services is popular, several manufacturers choose alternative ecosystems.
-
-Reasons include:
-
-- Regional regulations
-- Business strategy
-- Existing software investments
-- Partnerships with other technology companies
-- Greater control over user experience
-
-Instead of Google services, manufacturers may integrate:
-
-- HERE Technologies
-- TomTom
-- Amazon Alexa
-- Cerence Assistant
-- Proprietary navigation systems
-- Custom application stores
-
-This demonstrates an important principle:
-
-**Android Automotive OS does not depend on Google's applications.**
-
-AAOS provides the operating system, while manufacturers decide which services are installed.
-
-------
-
-# 5.8 Why Manufacturers Choose Different Solutions
-
-The choice between using GAS and building a custom ecosystem depends on several factors.
-
-| Consideration        | AAOS + GAS                 | AAOS without GAS            |
-| -------------------- | -------------------------- | --------------------------- |
-| Google Maps          | ✓                          | Optional alternative        |
-| Google Assistant     | ✓                          | Alternative voice assistant |
-| Google Play Store    | ✓                          | Custom app store            |
-| Google Play Services | ✓                          | Not included                |
-| User Experience      | Familiar Android ecosystem | Fully customized            |
-| Licensing            | Requires Google agreement  | No Google licensing         |
-| OEM Branding         | Moderate customization     | Maximum customization       |
-
-Neither approach is inherently better.
-
-Manufacturers select the solution that best aligns with their technical requirements, business strategy, target markets, and customer expectations.
-
+**Sources (external facts):**
+[Android Automotive (Wikipedia overview)](https://en.wikipedia.org/wiki/Android_Automotive),
+[Cars with Google built-in (Android Headlines)](https://www.androidheadlines.com/android-automotive),
+[Geely extends Google built-in](https://eletric-vehicles.com/geely/geely-extends-google-built-in-from-volvo-and-polestar-to-more-group-brands/),
+[BMW Group press release: BMW OS 9 on AOSP](https://www.press.bmwgroup.com/global/article/detail/T0401875EN),
+[BMW OS 9 without Google services (9to5Google)](https://9to5google.com/2023/01/06/bmw-android-automotive-2/).
+Official: [source.android.com/docs/automotive](https://source.android.com/docs/automotive).

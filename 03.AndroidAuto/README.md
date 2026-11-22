@@ -1,267 +1,349 @@
-# Android Auto
-### 1. What is Android Auto  ?
+# Android Auto (Smartphone Projection)
 
-Android Auto is a platform that connects an Android-powered smartphone to a vehicle’s **In-Vehicle Infotainment (IVI)** system, enabling a driver-friendly interface for apps such as navigation, media, and communication. It allows users to interact with their phone’s apps using the car's touchscreen, buttons, or voice commands while maintaining focus on the road.
-
-To use Android Auto, an Android device with **Android 6.0** (or above) is required. **Android 10** and later come with Android Auto pre-installed, while older versions require installing the Android Auto app. It works through both wired (USB) and wireless (Wi-Fi) connections to the car’s head unit.
-
-**Android Auto provides:**
-
-- **Simplified Interface:** A UI optimized for quick access and minimal distraction.
-- **Voice Interaction:** Google Assistant handles navigation, messages, and calls.
-- **App Access:** Apps like Google Maps, Spotify, and messaging platforms are supported.
-- **Cross-Device Support:** Works with various car models and phones.
-
-The **Android Auto application** is not a standalone application but rather an extension of an existing regular Android application designed to be compatible with **Android Auto**, **Android Developers** build a specific module or functionality within their app that integrates with Android Auto.
-
-If you have a music app like **Spotify**, the Android Auto integration allows Spotify (Regular Android App) to display a simplified interface with basic controls (play, pause, skip, etc.) on your car's infotainment screen while driving.
-
----------------
-
-### 2. Android Auto Apps Categories
-
-**2.1. Media Apps**
-
-These apps are focused on providing entertainment and audio content, such as music, podcasts, and audiobooks. They are the most common category in Android Auto.
-
-- **Examples**:
-  - **Spotify** (for music streaming)
-  - **YouTube Music** (for music streaming)
-  - **Audible** (for audiobooks)
-- **Features**:
-  - Simple UI for browsing and controlling media.
-  - Voice commands to play specific songs, albums, playlists, etc.
-  - Quick access to media controls like play, pause, skip, and volume.
-
- **2.2. Navigation Apps**
-
-These apps provide real-time directions, traffic updates, and routing to various destinations. They are essential for safe and efficient driving, especially for long trips or unfamiliar areas.
-
-- **Examples**:
-  - **Google Maps** (standard navigation app with traffic info, route planning)
-- **Features**:
-  - Turn-by-turn navigation with voice prompts.
-  - Traffic, road closure, and alternate route suggestions.
-  - Quick access to recent destinations and search functionality.
-
-**2.3. Messaging Apps**
-
-These apps allow users to receive and send messages while driving, using voice input to dictate responses, and text-to-speech for reading incoming messages.
-
-- **Examples**:
-  - **WhatsApp** (for text messaging and voice calls)
-  - **Google Chat** (for texting and messaging services)
-- **Features**:
-  - Read incoming messages via text-to-speech.
-  - Reply to messages using voice input, ensuring hands-free use.
-  - Minimal UI to avoid distractions while driving.
-
-**2.4. Point of Interest (POI) Apps**
-
-These apps help drivers find local points of interest, such as gas stations, charging stations, restaurants, hotels, and tourist attractions.
-
-- **Examples**:
-  - **GasBuddy** (to find nearby gas stations and prices)
-  - **ChargePoint** (for locating electric vehicle charging stations)
-- **Features**:
-  - Search for nearby services or places based on the user's current location.
-  - Provide directions to those locations.
-
-**2.5. Internet of Things (IoT) Apps**
-
-IoT apps control smart devices in the home or vehicle from within the car. These can be used for tasks like opening garage doors, turning on lights, or adjusting the thermostat.
-
-- **Examples**:
-  - **Google Home** (for controlling smart home devices)
-  - **Amazon Alexa** (for controlling Alexa-enabled devices)
-- **Features**:
-  - Ability to control IoT devices from the car's infotainment system.
-  - Voice commands for managing smart home tasks.
-
-#### Guidelines for all Android Auto Apps:
-
-- **Safety First**: The Android Auto interface is designed to minimize distractions. It focuses on **voice control** and simple, clear UI elements to avoid taking attention away from driving.
-- **Voice Interaction**: Android Auto heavily relies on voice commands for all categories, especially for messaging and navigation, ensuring that users can interact with their apps without needing to look at the screen.
-- **Simplified UI**: The apps available on Android Auto feature a **minimalist design**, with large buttons, fewer choices on the screen, and a focus on the essential tasks for driving.
-
------------------
-
-### 3. How Android Auto Work
-
-Android Auto enables communication between an **Android device** and the **car's head unit** (**IVI**). The primary purpose of Android Auto is to make the Android device compatible with the car's infotainment system, creating a seamless user experience for functions such as media playback, navigation, and messaging.
-
- #### 3.1. Android Auto Protocol
-
-Android Auto uses a specialized protocol called the **Android Auto Protocol**, which is built on top of the **Android Open Accessory (AOA) protocol**. This protocol ensures communication between the mobile device (Android phone) and the car's head unit (IVI system) using multiple communication channels.
-
-- **Transport Agnostic**: The protocol supports both **wired** (via USB) and **wireless** (via Wi-Fi) communication between the devices.
-- **C++ Library**: Google provides a C++ library that car manufacturers integrate into their head units to support the Android Auto Protocol. This allows Android Auto to work on various car platforms like **Linux**, **Android**, and **QNX** (used by some manufacturers like BMW and Audi).
-
-#### 3.2. Communication Channels between Android Device (Mobile) and Car IVI
-
-![image-20241223003227580](README.assets/image-20241223003227580.png)
-
-Android Auto divides the communication into **four main channels** for efficient and prioritized data exchange between the Android device and the car's head unit:
-
-- **Audio Channel**: For streaming audio, such as media or calls, from the Android device to the car’s head unit. This channel supports **bidirectional** communication for features like **hands-free calling** and **Google Assistant** integration.
-- **Display Channel**: Responsible for displaying the user interface (UI) from the Android device onto the car's screen. The data flow is **unidirectional** — from the Android device to the head unit.
-- **Input Channel**: Allows user input (via the car’s touch screen, buttons, or knobs) to be transmitted from the car's head unit to the Android device. This enables interaction with Android Auto apps, such as selecting a song or navigating to a destination.
-- **Sensor Channel**: Transfers sensor data from the car to the Android device, such as GPS coordinates, speed, and other telemetry data that the Android Auto app might need.
-
-All data between the two devices is formatted using **Protocol Buffers**, which ensure efficient serialization and deserialization of data for transmission over these channels.
-
->**Protocol Buffers (protobuf)** is a language-agnostic, platform-neutral, extensible mechanism developed by Google for serializing structured data. It is widely used for communication between different systems, particularly in environments where performance and efficiency are critical.
+> **Evidence:** Android Auto is a **proprietary Google product**. Its phone app and the head-unit
+> receiver SDK are **not in AOSP**. This chapter therefore marks each claim:
 >
->Provide a robust solution for efficient data serialization and communication between systems. Its compact binary format and language-agnostic nature make it ideal for modern distributed systems, APIs, and storage, offering advantages over traditional formats like JSON and XML.
+> | Label | Meaning |
+> |---|---|
+> | **Verified in source** | The AOSP 17 tree contains the code (e.g. the USB accessory handshake) |
+> | **Official documentation** | developer.android.com / support.google.com |
+> | **External** | Reliable press or industry reporting, checked November 2026 |
+> | **Simplified model** | A teaching description of a proprietary protocol. Real details are not public |
 
-#### 3.3. The Process of Connection Between Mobile and Car (via Android Auto)
+**Prerequisites:** [Digital Cockpits](../00.DigitalCockpits/README.md).
+**Next:** [Android Automotive OS](../04.AndroidAutomotiveOS/README.md). Read it right after this
+chapter, because AAOS is defined largely in contrast to Android Auto.
 
-**3.3.1. Establishing Connection (Step 1)**
+**After this chapter you should be able to:**
 
-When an Android device is connected to the car's head unit, whether via USB (wired) or Wi-Fi (wireless), the first step is **authentication and identification** between the two devices using the **Android Auto Protocol**.
+1. Explain what projection is and where the apps actually run.
+2. Explain how a phone and a head unit connect over USB (with the real AOA handshake from AOSP) and
+   over wireless.
+3. Name the app categories and the APIs apps use to appear in Android Auto.
+4. List Android Auto's limitations, which motivated AAOS.
 
-- **USB Mode**: In the case of a wired connection, the Android device is recognized as a **USB accessory**, and the car's head unit acts as the **host**.
-- **Wireless Mode**: If the connection is wireless, the Android device and car's head unit communicate over Wi-Fi, but the Android Auto Protocol still governs the data exchange.
+---
 
-Once the connection is established, the **Car Session** is activated. This session allows the **Android Auto app** on the device to interact with the head unit.
+## Table of Contents
 
-**3.3.2. Displaying the Home Screen on the Car Display (Step 2)**
+- [1. What is Android Auto?](#1-what-is-android-auto)
+- [2. Android Auto app categories](#2-android-auto-app-categories)
+- [3. How Android Auto works](#3-how-android-auto-works)
+- [4. Drawbacks of Android Auto](#4-drawbacks-of-android-auto)
+- [5. Common misconceptions](#5-common-misconceptions)
+- [6. Summary and knowledge check](#6-summary-and-knowledge-check)
+- [7. References](#7-references)
 
-Once the Android Auto session is established, the Android device sends the **home screen UI** to the car’s head unit via the **Display channel**. This serves as the **starting point** for the Android Auto experience.
+---
 
-**3.3.3. Interacting with Android Auto Apps (Step 3)**
+## 1. What is Android Auto?
 
-When the user taps on an app icon on the car’s screen (e.g., a media app like Spotify):
+**Android Auto** connects an Android **phone** to a car's **head unit** (the IVI system) and shows a
+driver-optimized interface for navigation, media, messaging and other apps on the car's screen. The
+user interacts through the car's touchscreen, knobs, steering-wheel buttons or voice.
 
-- **Input Event**: A touch event (including X and Y coordinates) is sent from the car’s head unit to the Android device through the **Input channel**.
-- **App Activation**: The Android device processes this event, starts the selected app, and prepares the UI for display on the head unit.
-- **Display Channel**: The app's UI is streamed back to the car's head unit using the **Display channel**.
+**The key idea: projection.** The apps run **on the phone**. The phone **renders** the UI and
+**streams** it to the car. The car mainly **displays** the video and **sends back** input. The car
+does not run the apps.
 
-**3.3.4. Playing Media (Step 4)**
+**Requirements (External, November 2026):**
 
-If the user selects a song to play, the process involves multiple communication channels:
+- Google raised the minimum to **Android 11** for **both wired and wireless** Android Auto. Before
+  that, wired worked from Android 9 and wireless needed Android 11.
+- Phones on Android 9/10 are no longer officially supported.
+- Since **Android 10**, Android Auto is built into the phone OS rather than installed as a separate
+  launcher app.
+- The car (or an aftermarket head unit) must support Android Auto. For wireless, both car and phone
+  need **5 GHz Wi-Fi** support.
 
-- **Input Channel**: The touch event to select the song is transmitted from the car's head unit to the Android device (Mobile).
-- **App Processing**: The song is downloaded, processed, and prepared on the Android device.
-- **Display Channel**: The "Now Playing" UI is sent back to the car's head unit to show the current track and controls.
-- **Audio Channel**: The audio data for the selected song is streamed from the Android device to the car's head unit for playback.
+**What Android Auto provides:**
 
-#### 3.4. Car Head Unit  (IVI) Side
+- **A simplified UI** with large targets, limited text and lists, designed to minimize distraction.
+- **Voice interaction** through Google Assistant (Gemini in newer versions, External) for navigation,
+  messages and calls.
+- **App access** to supported categories of phone apps ([§2](#2-android-auto-app-categories)).
+- **Cross-device support**: many car brands and phone models.
 
-The car's **head unit** serves as a display to project the Android Auto app running on the phone. The head unit doesn't run the Android Auto app itself—it acts as a **receiver** and relies on a software stack to handle communication with the phone. The car head unit identifies the Android device and starts using the **Android Auto Protocol (AAP)** for communication.
+**An "Android Auto app" is not a separate app.** It is a **regular phone app** that also implements
+car-specific APIs: a media service, messaging notifications, or Car App Library screens. For example,
+**Spotify** is one phone app. When connected to Android Auto, the Android Auto host shows Spotify's
+media library and playback controls in the car-optimized UI.
 
-![carSide](README.assets/carSide.jpeg)
+---
 
-#### 3.4.1. Android Auto Receiver Library
+## 2. Android Auto app categories
 
-The **Android Auto Receiver Library ** acts as the **bridge** between the car hardware and the Android Auto app on the phone. It is not a standalone library; instead, it refers to a **software stack** that includes a set of protocols and interfaces designed for car hardware. This **Software Stack** is pre-installed on the car’s head unit. It’s a set of protocols and interfaces that allow the car’s hardware to communicate with Android Auto on the phone. Also, The **interfaces** for car hardware Provides APIs for handling:
+Apps cannot draw arbitrary UI in Android Auto. They must belong to a supported **category**, and the
+**host** (Android Auto) renders their content using approved templates. This is how Google enforces
+driver-distraction rules.
 
-- **Touch inputs**: Forwarded from the car screen to the phone.
-- **Audio routing**: Integrates the car's audio system with Android Auto.
-- **Display rendering**: Ensures proper scaling and aspect ratio for the car's screen (Android Auto UI on Car display).
-- **Sensors and data**: (e.g., GPS, speed) shared if required.
+**How apps integrate (Official documentation, developer.android.com/training/cars):**
 
-**Automakers (OEMs)** need to integrate the Android Auto software stack into their head unitsar Hardware) and pass Google’s certification to ensure car compatibility with Android Auto.
+| Category | How the app integrates | Example apps (External) |
+|---|---|---|
+| **Media** (music, podcasts, audiobooks) | Exposes a **media browse tree** and a **media session** (`MediaBrowserService` / Media3 `MediaLibraryService` + `MediaSession`). The host builds the UI | Spotify, YouTube Music, Audible |
+| **Messaging / communication** | Posts **`MessagingStyle` notifications** with **Reply** and **Mark-as-read** actions. The host reads them aloud and takes voice replies | WhatsApp, Google Messages |
+| **Navigation** | **Car App Library** templates (`NavigationTemplate`) + a map surface | Google Maps, Waze |
+| **Point of Interest (POI)** | Car App Library (place lists/maps) | Parking, EV charging (e.g. ChargePoint), fuel prices |
+| **Internet of Things (IoT)** | Car App Library | Garage doors, smart-home controls |
+| **Weather** | Car App Library | Weather apps |
+| **Video, games, browsers** | **Only while parked** (and only where the category is enabled) | Video streaming while charging an EV |
 
-#### 3.4. Android Device (Mobile) Side
+The **Android for Cars App Library** (androidx, not AOSP) lets one app support **both** Android Auto
+and Android Automotive OS with the same template-based code. The set of approved categories has
+grown over time, so check the "Supported app categories" table on developer.android.com for the
+current list and the parked/driving status of each.
 
-When a phone connects to a car's head unit, the **Android Auto app** becomes the bridge between the car's hardware and the phone's Android operating system. This app provides APIs and services to project a seamless driving experience onto the car's display.
+**Design rules for all Android Auto apps (Official documentation, summarized):**
 
-![mobileSide](README.assets/mobileSide.jpeg)
+- **Safety first:** limited items per list, limited text, no free-form UI while driving.
+- **Voice first:** messaging and navigation are designed for hands-free use.
+- **Templates:** a consistent look across apps, rendered by the host, not the app.
 
-**3.4.1. Media API**
+---
 
-- **Purpose**: To provide a consistent interface for accessing and controlling media apps (e.g., Spotify, YouTube Music).
-- **How it works :**
-  - Media apps on the phone integrate with the Android Auto **Media API** to send metadata like song titles, album art, and playback controls to the car display.
-  - When the driver interacts with media controls on the car (e.g., play, pause), these actions are sent back to the media app via the API.
-- **Example**: You play a song on Spotify. The API sends the song's metadata and playback status to Android Auto, which forwards it to the car's display.
+## 3. How Android Auto works
 
-------
+### 3.1 The two sides
 
-**3.4.2. Notification API**
+![Phone ↔ car communication](README.assets/image-20241223003227580.png)
 
-- **Purpose**: To display notifications (e.g., incoming calls, messages, or app alerts) in a simplified and safe way.
-- **How it works:**
-  - The phone's apps push notifications to Android Auto via this API.
-  - Android Auto formats the notifications for the car’s display and ensures they meet safety guidelines (e.g., large text, no distractions).
-- **Example**: When you get a WhatsApp message, a notification appears on the car display. You can have it read aloud or respond via voice.
+| Side | Software | What it does |
+|---|---|---|
+| **Phone** | The **Android Auto** app/component (Google, proprietary) + Google Play services + your apps | Runs the apps, renders the car UI, encodes **video**, mixes **audio**, handles voice, manages the session |
+| **Head unit** | An **Android Auto receiver** stack (Google provides a receiver library/SDK to licensed OEMs and suppliers). It runs on the head unit's OS: Linux, QNX, or Android/AAOS | Decodes and shows video, plays audio, sends **touch/knob/button** input, provides **microphone** and **vehicle sensor data**, manages the connection |
 
-------
+**Transport-agnostic protocol (Simplified model):** both sides speak the **Android Auto Protocol**
+(AAP). Its messages are serialized with **Protocol Buffers**. The same protocol runs over **USB** or
+**Wi-Fi**.
 
-**3.4.3. Voice API**
+> **Protocol Buffers (protobuf)** is Google's language- and platform-neutral format for serializing
+> structured data. It is compact (binary), fast to parse, and supports schema evolution. Those
+> properties suit a link where many small control messages and large media streams share bandwidth.
 
-- **Purpose**: Enables interaction with Android Auto using voice commands.
-- **How it works:**
-  - The Voice API integrates with Google Assistant to allow hands-free control.
-  - Users can make calls, send messages, or navigate by saying commands like “Call John” or “Navigate to the nearest gas station.”
-- **Example**: You press the voice command button on your steering wheel, and the Voice API triggers Google Assistant to process your request.
+### 3.2 Logical channels (Simplified model)
 
-------
+AAP multiplexes several **logical channels** over one connection. Teaching material, including the
+diagram above, often shows four main ones:
 
-**3.4.4. Messaging APIs**
+| Channel | Direction | Carries |
+|---|---|---|
+| **Video / display** | Phone → car | The rendered UI as an **encoded video stream** (H.264 is commonly cited, External) |
+| **Audio** | Both directions | Media, navigation guidance and system sounds to the car. **Microphone** audio from the car to the phone for calls and voice commands |
+| **Input** | Car → phone | Touch coordinates, rotary knob, steering-wheel keys |
+| **Sensor / vehicle data** | Car → phone | Night mode, driving status (parked or moving), GPS from the car, speed, gear… whatever the OEM provides |
 
-- **Purpose**: To enable safe and seamless communication via messaging apps.
-- **How it works:**
-  - Messaging apps (e.g., WhatsApp, Telegram) integrate with Android Auto using this API.
-  - The API ensures messages are displayed in a driver-friendly format (e.g., large fonts) and allows voice dictation for replies.
-- **Example**: When you receive a message, Android Auto displays it on the car screen and offers options to “Read” or “Reply” via voice.
+Real implementations have **more** channels, for example control/session, media playback status,
+navigation status (turn-by-turn data for the cluster), Bluetooth pairing and phone status. The
+four-channel picture is a **simplification**.
 
-------
+### 3.3 Connecting over USB: the Android Open Accessory (AOA) handshake (Verified in AOSP source)
 
-**3.4.5. CarService / Google Play Services**
+The **USB** link starts with the **Android Open Accessory** protocol. The car is the **USB host**,
+the phone is the **USB device**, and the car switches the phone into "accessory mode". AOSP contains
+the host-side code an AAOS head unit uses for this, in
+`packages/services/Car/car-usb-handler/src/android/car/usb/handler/AoapInterface.java`:
 
-- **Purpose**: Manages the core communication between the phone and the car's head unit.
-- **How it works:**
-  - **CarService**: Handles low-level protocol communication with the car’s Android Auto Receiver stack.
-  - **Google Play Services**: Ensures compatibility with all supported cars and handles updates to Android Auto functionality.
-- **Example**: When you connect your phone, CarService handles the communication protocol (e.g., USB, Wi-Fi) to sync the phone and car.
+```java
+private static final int USB_ACCESSORY_VENDOR_ID = 0x18D1;        // Google's USB vendor ID (line 38)
+USB_ACCESSORY_MODE_PRODUCT_ID.add(0x2D00); ... add(0x2D05);        // accessory-mode product IDs (44–47)
+public static final int ACCESSORY_GET_PROTOCOL = 51;                // line 71
+public static final int ACCESSORY_SEND_STRING  = 52;                // line 85
+public static final int ACCESSORY_START        = 53;                // line 97
+```
 
-------
+**Step by step:**
 
-### 4. **Drawbacks of Android Auto**
+1. The phone is plugged in and enumerates as a normal USB device (MTP, charging…).
+2. **`ACCESSORY_GET_PROTOCOL` (51):** the head unit sends a USB control request asking the phone
+   which AOA protocol version it supports (`AoapInterface.getProtocol(...)`, line 130).
+3. **`ACCESSORY_SEND_STRING` (52):** the head unit sends identification strings, such as
+   manufacturer, model and version, which the phone uses to pick the app that handles this accessory.
+4. **`ACCESSORY_START` (53):** the head unit tells the phone to switch to accessory mode.
+5. The phone **re-enumerates** with Google's vendor ID **`0x18D1`** and an accessory product ID
+   **`0x2D00`–`0x2D05`**. The two sides now have bulk endpoints for a raw data stream.
+6. On the phone, Android's `UsbDeviceManager` sees the accessory start
+   (`frameworks/base/services/usb/java/com/android/server/usb/UsbDeviceManager.java`,
+   `ACCESSORY_START_MATCH`, line 160) and hands the accessory to the matching app, Android Auto.
+7. **Android Auto Protocol** messages (version negotiation, TLS-based authentication, service
+   discovery, then the channels) flow over that stream (Simplified model).
 
-1. **Dependency on the Smartphone**
+### 3.4 Connecting wirelessly (External)
 
-   - **Issue**: Android Auto requires a connected Android smartphone for it to function. If the phone's battery dies or connectivity is disrupted, the infotainment features stop working.
-   - **Impact**: This reliance can create a less seamless user experience compared to a native system that runs directly in the car.
+1. **Bluetooth** is used first: pairing, the initial handshake, and exchanging Wi-Fi credentials. It
+   also stays connected for hands-free calling.
+2. The phone then joins a **5 GHz Wi-Fi** (peer-to-peer / Wi-Fi Direct style) link to the head unit.
+3. **Video, audio and input** travel over Wi-Fi, because Bluetooth does not have enough bandwidth for
+   continuous video.
+4. Both radios must stay on. Turning off either breaks the session.
 
-2. **Limited Access to Vehicle Features**
+### 3.5 What happens when the user uses it
 
-   - **Issue**: Android Auto primarily operates as a projection system for apps like navigation, media, and messaging. It cannot deeply integrate with car-specific features such as climate control, advanced driver-assistance systems (ADAS), or vehicle sensors.
-   - **Impact**: Drivers need to switch between Android Auto and the car's native interface for certain functions, leading to fragmentation.
+**Step 1: Connection and session start.** USB (AOA) or wireless setup completes. Phone and car
+authenticate and negotiate capabilities: screen size, resolution, which channels exist, sensor
+support. A **projection session** starts.
 
-3. **Performance Limitations**
+**Step 2: Home screen.** The phone renders the Android Auto home screen at the car's resolution and
+streams it over the **video channel**.
 
-   - **Issue**: The quality of the experience is tied to the phone’s performance. Older or slower phones may lead to laggy or inconsistent performance.
-   - **Impact**: This inconsistency can result in frustration, particularly during demanding tasks like navigating or streaming media.
+**Step 3: The user taps an app** (e.g. Spotify):
 
-4. **Connectivity Issues**
+- **Input channel:** the touch (x, y) goes from car to phone.
+- **Phone:** the Android Auto host on the phone handles the tap, binds to Spotify's media service,
+  and builds the media UI from Spotify's browse tree.
+- **Video channel:** the updated screen is streamed back.
 
-   - **Issue**: Android Auto requires a wired USB connection (in many cars) or wireless connectivity (in newer cars). Connectivity issues, such as unreliable wireless connections or incompatible USB cables, can disrupt usage.
-   - **Impact**: These issues can hinder the convenience of the system, especially during long trips.
+**Step 4: Playing a song:**
 
-5. **Limited Customization**
+- **Input channel:** the touch on a song goes to the phone.
+- **Phone:** Spotify streams or decodes the audio, and the media session updates metadata (title, art,
+  state).
+- **Video channel:** the "Now Playing" screen is streamed.
+- **Audio channel:** the audio goes to the car's speakers. When navigation speaks, guidance audio is
+  mixed or ducked appropriately.
 
-   - **Issue**: Android Auto has a standardized interface and app ecosystem, which limits automakers from customizing the system to fit their brand identity or add unique features.
-   - **Impact**: Automakers cannot differentiate their in-car experiences, making Android Auto feel generic compared to branded systems.
+### 3.6 Head-unit side in more detail
 
-6. **App Restrictions**
+![Car side](README.assets/carSide.jpeg)
 
-   - **Issue**: Android Auto has strict guidelines for app developers, limiting the types of apps that can be used. For example, only navigation, media, and messaging apps are officially supported.
-   - **Impact**: This restricts the ecosystem and limits the types of services available to users.
+The head unit **does not run** the projected apps. It runs a **receiver stack** that the OEM or
+supplier integrates and that must pass **Google certification**. It provides interfaces for:
 
-   
+- **touch and input:** forwarding the screen, knob and steering-wheel events;
+- **audio routing:** connecting projected audio streams to the car's audio system (focus, ducking,
+  amplifier);
+- **display rendering:** decoding and scaling the video for the car's display and aspect ratio;
+- **sensors and vehicle data:** GPS, speed, night mode, driving state, if the OEM provides them.
 
-7. **Compatibility Issues**
+**On an AAOS head unit**, AOSP provides some of the plumbing: the AOA host handshake above
+(`car-usb-handler`) and `CarProjectionService`
+(`packages/services/Car/service/src/com/android/car/CarProjectionService.java`). The Android Auto
+receiver app itself is Google's.
 
-   - **Issue**: Android Auto is not supported by all cars or head units, and older models often lack the necessary hardware or software updates to enable it.
-   - **Impact**: Users with older cars may need to invest in third-party head units to access Android Auto.
+### 3.7 Phone side in more detail
 
-----------------------------
+![Phone side](README.assets/mobileSide.jpeg)
 
-### 5. References 
+On the phone, the **Android Auto** component is the **host**. It talks to the head unit and renders
+apps' content. Apps integrate through **standard Android APIs** (Official documentation):
 
-- [Google Developers I/O 2014 Conference](https://www.youtube.com/watch?v=9vjntxXCUNA) 
-- Android Auto Documentation 
-- https://rajasoftwarelabs.com/blog/developing-apps-for-android-auto
+**3.7.1 Media**
+- **Purpose:** a consistent interface for media apps.
+- **How it works:** the app exposes a browsable media tree and a **media session**. The host shows
+  the library and playback controls. Commands such as play, pause and skip go to the app's media
+  session.
+- **Example:** Spotify publishes the current track's metadata and art. Android Auto displays it on the
+  car screen.
+
+**3.7.2 Notifications**
+- **Purpose:** show relevant alerts (calls, messages) safely.
+- **How it works:** apps post normal notifications. The host filters them, shows them as large
+  heads-up cards, and offers read-aloud.
+
+**3.7.3 Voice**
+- **Purpose:** hands-free control.
+- **How it works:** the steering-wheel voice button or the hotword triggers **Google Assistant**
+  (Gemini in newer versions) on the phone, using the car's microphone over the audio channel. Example:
+  "Navigate to the nearest gas station".
+
+**3.7.4 Messaging**
+- **Purpose:** safe reading and replying.
+- **How it works:** apps use `MessagingStyle` notifications with **Reply** (with `RemoteInput`) and
+  **Mark as read** actions. The host reads messages aloud and dictates replies.
+- **Example:** a WhatsApp message arrives. Android Auto announces it, and the driver replies by voice.
+
+**3.7.5 Android Auto app and Google Play services (renamed from "CarService")**
+- **Purpose:** manage the session and protocol with the head unit, and keep compatibility up to date.
+- **How it works:** the Android Auto component (Google, proprietary) handles connection, protocol,
+  authentication and rendering. Google Play services provide shared infrastructure and updates.
+
+> On the phone, use the name **"Android Auto (host)"**.
+
+---
+
+## 4. Drawbacks of Android Auto
+
+1. **Dependency on the smartphone**
+   - **Issue:** without a connected, compatible phone, nothing works. A dead battery, forgetting the
+     phone, or a bad cable ends the session.
+   - **Impact:** a less seamless experience than a native in-car system.
+2. **Limited access to vehicle features**
+   - **Issue:** projection runs on the phone. It **cannot control** climate, seats or vehicle
+     settings, and it receives only the vehicle data the head unit chooses to share.
+   - **Impact:** drivers switch between Android Auto and the car's native UI.
+3. **Performance depends on the phone**
+   - **Issue:** rendering and encoding happen on the phone, so older phones and thermal throttling
+     can cause lag.
+   - **Impact:** an inconsistent experience during navigation and media.
+4. **Connectivity issues**
+   - **Issue:** USB cable quality, wireless interference, 5 GHz support and Bluetooth + Wi-Fi both
+     being needed.
+   - **Impact:** dropped sessions, especially on long trips.
+5. **Limited OEM customization**
+   - **Issue:** Google defines the UI and templates.
+   - **Impact:** brand differentiation is limited, and every car looks the same in Android Auto.
+6. **App restrictions**
+   - **Issue:** only approved **categories** using host-rendered templates are allowed, and video or
+     games only while parked ([§2](#2-android-auto-app-categories)).
+   - **Impact:** a smaller app ecosystem than on the phone. This is deliberate, for safety.
+7. **Compatibility**
+   - **Issue:** older cars or head units lack support. Phones below the current minimum OS (Android 11
+     as of November 2026, External) lose support.
+   - **Impact:** users may need an aftermarket head unit or a newer phone.
+
+These limitations are exactly what [Android Automotive OS](../04.AndroidAutomotiveOS/README.md#2-why-aaos-was-created)
+addresses by running Android **natively** in the car.
+
+---
+
+## 5. Common misconceptions
+
+| Misconception | Correct interpretation |
+|---|---|
+| "Android Auto runs on the car." | It runs on the **phone**. The car displays a video stream and sends input. |
+| "Android Auto = Android Automotive OS." | Projection vs a native car OS ([chapter 04](../04.AndroidAutomotiveOS/README.md)). |
+| "Android Auto is part of AOSP." | Proprietary Google software. AOSP only has generic pieces, such as the AOA USB handshake. |
+| "Apps draw their own UI in the car." | The **host** renders templates from the app's data, for safety and consistency. |
+| "Android Auto can change the cabin temperature." | No. Vehicle controls stay in the car's own system. |
+| "The phone-side component is called CarService." | No. That name belongs to AAOS's in-car `com.android.car` service. |
+
+---
+
+## 6. Summary and knowledge check
+
+**Key takeaways**
+
+- Android Auto = **projection**. The phone runs the apps and renders, and the car displays and sends
+  input.
+- USB sessions start with the **AOA** handshake (verified in AOSP's car USB handler). Wireless sessions
+  use **Bluetooth for setup** and **5 GHz Wi-Fi for data**.
+- Apps join through **categories** and standard APIs (media sessions, messaging notifications, the
+  Car App Library), and the host renders their content.
+- Its limits (phone dependence, no vehicle control, little OEM customization) motivated AAOS.
+
+**Questions**
+
+1. Where is the Spotify UI *rendered* when it is shown in Android Auto, and how does it get to the
+   car?
+2. List the three AOA control requests (numbers and names) and what the phone does after
+   `ACCESSORY_START`.
+3. Why does wireless Android Auto need both Bluetooth and Wi-Fi?
+4. Why does Android Auto use host-rendered templates instead of letting apps draw their own UI?
+5. Why is naming the phone-side component "CarService" misleading?
+
+**Investigation task (AOSP 17):** read
+`packages/services/Car/car-usb-handler/src/android/car/usb/handler/AoapInterface.java` and
+`AoapServiceManager.java`. Find where the head unit decides that a connected device supports AOA,
+and where it switches the device into accessory mode.
+
+---
+
+## 7. References
+
+- [Google I/O 2014: Android Auto introduction (video)](https://www.youtube.com/watch?v=9vjntxXCUNA)
+- [Android for Cars: overview and app categories (developer.android.com)](https://developer.android.com/training/cars)
+- [Use the Android for Cars App Library](https://developer.android.com/training/cars/apps)
+- [Android Auto now requires Android 11 (9to5Google, Nov 2026)](https://9to5google.com/2026/11/09/android-auto-minimum-requirements-android-11/)
+- [Why wireless Android Auto uses both Bluetooth and Wi-Fi (Engadget)](https://engadget.com/2210415/why-wireless-android-auto-uses-both-bluetooth-wifi)
+- [Android Open Accessory overview, AOAv1/AOAv2 (source.android.com)](https://source.android.com/docs/core/interaction/accessories/protocol). The request numbers and IDs in §3.3 come from the AOSP source, not from this page.
+- Original article kept from the earlier version: https://rajasoftwarelabs.com/blog/developing-apps-for-android-auto

@@ -1,1281 +1,1420 @@
-## Android Open Source Project AOSP 
-
-The **Android Open Source Project (AOSP)** is the initiative led by Google to maintain and develop Android as an open-source platform. AOSP provides the source code for Android, which is the operating system used by a wide range of mobile devices such as smartphones, tablets, and even other hardware platforms. It includes the core components such as the Linux kernel, libraries, runtime, and application framework, along with essential system apps (e.g., contacts, messaging, and phone apps).
-
-AOSP allows anyone to access, modify, and distribute the Android operating system. This openness encourages customization and innovation, and many device manufacturers, such as Samsung, Xiaomi, and others, build on AOSP to develop their own custom Android versions (with additional features and skins).
-
-### 1. Android Platform Architecture
-
-In the architecture of the Android platform. Each layer has specific purposes and components, contributing to Android's ability to run efficiently on devices like smartphones, tablets, Android TV, and **Android Automotive OS (AAOS)**. Let’s break down the **layers, their features, and their roles** in general Android usage and Android Automotive.
-
-![](README.assets/android-stack_2x.png)
-
-#### 1.1. Linux Kernel Layer 
-
-The **Linux kernel** is the core component of the Android operating system. It acts as the bridge between the hardware and the software, providing essential functionalities such as device drivers, memory management, process management, and security. Android is built on top of the Linux kernel, leveraging its stability, security, and scalability. The Linux kernel handles various hardware interactions, allowing Android to support a wide range of devices. It also provides the foundation for Android's multi-tasking capabilities, power management, and resource allocation.
-
-![image-20241216223622546](README.assets/image-20241216223622546.png)
-
-- **Purpose**: At the core, Android uses the **Linux Kernel** to manage hardware abstraction, device drivers, and resource management.
-
-**Why Use Linux Kernel in Android?**
-
-The choice of the **Linux Kernel** for Android is driven by several compelling reasons:
-
-1. **Great Memory and Process Management:**
-   - The Linux Kernel has robust memory management capabilities, which is crucial for handling the limited resources (e.g., RAM) in mobile devices. It uses techniques like **virtual memory**, **page swapping**, and **memory overcommit handling** to ensure efficient allocation and deallocation of memory across running processes.
-2. **Permission-Based Security Model:**
-   - Linux provides a permission-based security model where each process and file has a specific owner and set of access permissions. This helps in controlling access to system resources and enhances security. In Android, this model is extended to apps running in a **sandbox** to ensure they can't access each other's data without permission.
-3. **Support for Shared Libraries:**
-   - Linux supports **shared libraries**, which allows multiple programs to share common code, reducing memory usage and making applications more efficient. Android leverages this to reduce the size of apps and ensure faster execution.
-4. **Open Source:**
-   - Linux is open-source software, meaning its code can be freely modified and distributed. This is beneficial for Android development, as it allows manufacturers to customize the kernel for their hardware and optimize it for their devices.
-
-### **Kernel Enhancements in Android:**
-
-The **Android Kernel** has undergone several enhancements to meet the specific needs of mobile devices and improve the performance of Android apps. Some key kernel modifications and drivers include:
-
-1. **Alarm Driver:**
-
-   - Android introduced an **alarm driver** to allow scheduled tasks and wake-up events. This driver enables devices to wake up from a sleep or low-power state at scheduled times, thus supporting tasks like alarms, notifications, and periodic background updates even when the device is in deep sleep.
-
-2. **ASHMEM (Android Shared Memory):**
-
-   - **ASHMEM** is a memory management technique in Android where multiple processes or apps can share memory regions. This allows efficient data sharing between apps without the need for copying large amounts of data, improving performance.
-
-3. **Binder:**
-
-   - **Binder** is the **inter-process communication (IPC)** mechanism in Android. It facilitates communication between apps and system services. Binder uses **shared memory** to improve performance and allows processes to communicate with each other using synchronous calls, making it a high-performance IPC system. Android apps and services communicate with each other via Binder to share data, request services, and perform other tasks.
-
-4. **Low Memory Killer (LMK):**
-
-   - The **Low Memory Killer** is a kernel feature that helps manage memory on devices with limited resources. When the system detects low memory, the LMK automatically terminates background processes to free up memory and ensure that active apps or services continue running smoothly. This helps prevent the system from crashing due to memory exhaustion.
-
-5. **Kernel Debugger:**
-
-   - Android also incorporates a kernel debugger for easier debugging of kernel-level code. This is particularly useful for identifying and fixing issues related to hardware drivers, system performance, and low-level system crashes. KGDB (Kernel GNU Debugger) and **Android Debug Bridge)** `adb`
-
-6. **Power Management Driver:**
-
-   - **Power management** is one of the most important aspects of mobile devices, given the limited battery capacity. Android has enhanced the Linux power management system to support **wakelocks**. Wakelocks keep the device awake for specific tasks (like music playback or data syncing), and Android uses **partial wakelocks** (keeping some parts of the device awake) and **full wakelocks** (keeping the entire device awake) to minimize power consumption.
-   - Android's **wakelock system** helps manage power by allowing background tasks to run while preventing the device from staying awake unnecessarily.
-
-7. **Logger:** Logcat
-
-   - Android's kernel includes a **logging system** that helps in debugging and monitoring system behavior. It allows for logging system messages (such as errors, warnings, and debugging info) that can be collected and analyzed by developers or device manufacturers. This is useful for diagnosing issues with the device and ensuring that everything is working as expected.
-
-   -------------------------------------------------------------------
-
-| Feature                     | Linux Kernel                                   | Modified Linux Kernel (Android)                              |
-| --------------------------- | ---------------------------------------------- | ------------------------------------------------------------ |
-| **Kernel Type**             | Monolithic kernel                              | Modified Linux kernel                                        |
-| **Optimization Focus**      | General-purpose computing (servers, desktops)  | Mobile and touchscreen devices                               |
-| **Power Management (PM)**   | Basic power management                         | Advanced power-saving features, including `WakeLock`         |
-| **Memory Management (MMU)** | Traditional memory management                  | Enhanced with `AshMem` and ION memory management             |
-| **Virtual Memory (VM)**     | Standard VM systems                            | Includes Low Memory Killer (`LMK`)                           |
-| **IPC System**              | System V IPC, POSIX IPC, and sockets           | Binder IPC optimized for mobile                              |
-| **Scheduler**               | General-purpose scheduler                      | Modified scheduler optimized for UI responsiveness           |
-| **Hardware Support**        | Generic drivers for a wide range of devices    | Specific drivers for mobile hardware (e.g., touchscreens, sensors) |
-| **Security**                | SELinux and traditional Linux permissions      | SELinux plus app sandboxing, additional cryptographic features |
-| **Hardware Interaction**    | Directly via drivers                           | Through a Hardware Abstraction Layer (HAL)                   |
-| **Standard Library**        | GNU C Library (glibc)                          | Bionic C Library (optimized for low memory and performance)  |
-| **Wakelocks**               | Not available                                  | Prevents devices from sleeping during critical tasks         |
-| **Logging System**          | Persistent system logs (`dmesg`, `journalctl`) | Circular buffer logs with `logcat` for better performance    |
-| **Native Build System**     | Make                                           | Android-specific `ndk-build` and Gradle                      |
-| **Additional Components**   | -                                              | Includes Android-specific features like HAL and service discovery |
-
-![image-20241221204333185](README.assets/image-20241221204333185.png)
-
-- **Role in Android Automotive**:
-
-  - Enables hardware integration with the vehicle’s sensors, cameras, audio, and displays.
-  - For example, drivers for vehicle **sensors** (like temperature and accelerometer) or **infotainment controls** depend on this kernel layer.
-  - Power management is critical for cars, ensuring battery efficiency when running vehicle electronics.
-
-- **Example**:
-
-  - When a user streams music via **Spotify** in the infotainment system, the kernel handles communication between the media app and the **audio driver**.
-  - For a camera view displayed while reversing, the **camera driver** relays data efficiently.
-
-  ---------------------------
-
-### 1.2. Hardware Abstraction Layer HAL
-
-The Hardware Abstraction Layer (HAL) provides a standard interface between the Android OS and the device’s hardware. HAL is crucial for Android’s flexibility across various devices with different hardware configurations.
-
-![image-20241216223647751](README.assets/image-20241216223647751.png)
-
-- **Standard Interfaces**: HAL defines a set of functions that expose hardware capabilities to the Android system. For instance, there are HAL modules for camera, audio, sensors, and more.
-- **Hardware Flexibility**: By abstracting the hardware specifics, HAL allows Android to run on a wide variety of devices without requiring changes to the upper layers of the architecture.
-
-**Example**: If a device manufacturer  or OEM adds a new type of sensor, they can create a HAL module for it. The Android system can then interact with the sensor without needing any changes to the app’s code.
-
-- **Purpose**: HAL abstracts hardware components so they can interact with higher-level software components without needing driver-level code changes.
-- **Features**:
-  - Provides **interfaces** for hardware components like **Audio**, **Bluetooth**, **Camera**, and **Sensors**.
-  - Ensures that **device-specific implementations** remain isolated and modular.
-- **Role in Android Automotive**:
-  - HAL facilitates communication between vehicle hardware and the **Android Runtime** or applications.
-  - For instance, the **Bluetooth HAL** ensures seamless connection between the vehicle infotainment system and a smartphone for hands-free calling or media playback.
-- **Example**:
-  - If the vehicle integrates **sensors** for monitoring **tire pressure** or **fuel efficiency**, the HAL layer ensures this data is passed up to higher-level applications for display or analysis.
-
-### **1.3. Native C/C++ Libraries**
-
-**Android platform/native libraries** are a collection of pre-compiled code modules that provide essential functions and services to Android applications. These libraries include various components such as graphics rendering, multimedia processing, network communication, database management, and more. They are written in C/C++ and are accessible to developers through the Android Native Development Kit (NDK). By leveraging these libraries, developers can enhance the functionality and performance of their apps, as well as access low-level system resources. The platform/native libraries serve as a foundation for building powerful and feature-rich Android applications.
-
-![image-20241216223734770](README.assets/image-20241216223734770.png)
-
->**Android Native Development Kit (NDK)**
->
->The Android NDK is a toolset that lets you implement parts of your Android App in native code, using languages such as C and C++. For certain types of apps, this can help you reuse code libraries written in those languages. By using the NDK, developers can:
->
->1. **Access Low-Level System APIs**: Directly interact with device hardware, sensors, and other native components.
->2. **Leverage Performance**: Write performance-critical code in C/C++ to optimize for tasks such as game engines, multimedia processing, or heavy computation.
->3. **Reuse Existing Code**: Integrate libraries or code written in C/C++ from other platforms into Android applications.
->
->**How the NDK Works**
->
->1. **Code in C/C++:** Developers write native code for specific tasks.
->2. **JNI (Java Native Interface) :** A bridge between Java/Kotlin and native code. It allows the Android runtime to interact with the native C/C++ code.
->3. **Compilation:** The NDK compiles the C/C++ code into a shared library (`.so` file).
->4. **Integration:** The shared library is bundled with the Android app (APK) and called from Java/Kotlin code as needed.
->
->------------
-
->#### **Scenario:**
->
->You are building an **Android Automotive Infotainment System** application that needs to handle real-time data processing for vehicle sensors (e.g., speed, RPM, and temperature) and display the results on a **digital dashboard**. To ensure low latency and high performance, you decide to use the **Android NDK** for processing sensor data.
->
->1. Use native C++ code to:
->   - Read and process real-time vehicle sensor data.
->   - Perform computations for metrics like average speed or fuel efficiency.
->   - Optimize performance for continuous, high-speed data input.
->2. Use JNI to pass the processed data to the Java/Kotlin layer for visualization on the Android Automotive UI.
->
->------
->
->
-
-- **Native C/C++ Libraries Purpose**: Provide core functionalities and optimized performance for Android applications.
-
-- **Native C/C++ Libraries Features**:
-
-  - Includes libraries like **OpenGL ES** for graphics, **WebKit** for web browsing, **Media Framework** for audio/video playback, and **Libc** for system operations.
-
-    >#### 1. OpenGL
-    >
-    >**OpenGL** stands for **Open Graphics Library**.
-    >
-    >It is a cross-platform, industry-standard API used for rendering 2D and 3D graphics.Originally developed for desktop systems, OpenGL allows developers to communicate with the **GPU (Graphics Processing Unit)** to accelerate graphics rendering, making applications faster and visually richer.
-    >
-    >- **OpenGL ES** (OpenGL for Embedded Systems) is a lightweight version of OpenGL, specifically designed for resource-constrained devices like: **Smartphones**, **Tablets**, **Video game consoles** , **Personal Digital Assistants (PDAs)**, and **Digital cockpits in Vehicles** 
-    >- It enables hardware-accelerated rendering of 2D and 3D graphics on these devices.
-    >
-    >**Why OpenGL ES?**
-    >
-    >Embedded devices often have limited: **Processing Power**, **Memory** and **Battery Life**
-    >
-    >OpenGL ES addresses these constraints by:
-    >
-    >- Removing less-used features of OpenGL.
-    >- Focusing on performance optimization for embedded hardware.
-    >- Ensuring compatibility across a variety of devices with different GPU architectures.
-    >
-    >**How OpenGL ES is Used in IVI and Digital Cockpits** :
-    >
-    >**1. High-Quality Rendering**
-    >
-    >- **Graphics for Dashboards and Clusters:**
-    >  - OpenGL ES enables smooth, real-time rendering of graphical components such as:
-    >    - Gauges (speedometer, RPM, fuel level).
-    >    - Navigation maps with live updates.
-    >    - Warning indicators and diagnostics.
-    >- **3D Animations:** Creates animations for gear shifts, driving modes, or alerts.
-    >
-    >**2. Touchscreen Interactivity**
-    >
-    >- OpenGL ES supports rendering intuitive and responsive UI elements for touchscreens:
-    >  - Menus, buttons, and sliders.
-    >  - Drag-and-drop interactions for navigation or media controls.
-    >- **Example:** Touch-based climate control or seat adjustment in luxury vehicles.
-    >
-    >**3. Navigation Systems**
-    >
-    >- OpenGL ES powers real-time 3D maps with:
-    >  - Zoom, pan, and rotate functionalities.
-    >  - Integration with GPS data for turn-by-turn navigation.
-    >  - Rendering terrain, buildings, and landmarks in 3D.
-    >
-    >**4. Multi-Screen Support**
-    >
-    >- IVI and Passenger Displays:
-    >  - OpenGL ES enables rendering for multiple displays in the car, such as:
-    >    - Driver's instrument cluster.
-    >    - Central IVI display.
-    >    - Rear passenger entertainment screens.
-    >- Example: Different content on driver and passenger screens using shared GPU resources.
-    >
-    >**5. Augmented Reality (AR)**
-    >
-    >- OpenGL ES integrates with AR features in some vehicles:
-    >  - Rendering overlays for heads-up displays (HUD).
-    >  - Enhancing the driver’s view with navigation directions projected on the windshield.
-    >  - Visualizing nearby vehicles or hazards detected by sensors.
-    >
-    >**6. Performance Optimization**
-    >
-    >- Low Power Usage:
-    >  - Since vehicles rely on limited resources, OpenGL ES ensures efficient GPU utilization, reducing power consumption and heat generation.
-    >- Real-Time Graphics:
-    >  - Offers low-latency rendering, essential for real-time updates like speed or collision warnings.
-    >
-    >**7. Customization and Themes**
-    >
-    >- OpenGL ES supports customizable skins and themes for IVI and digital cockpit interfaces:
-    >  - Day/Night modes with adaptive brightness.
-    >  - Themes tailored to different driving modes (e.g., Eco, Sport).
-    >
-    >--------------------------
-
-    >#### 2. WebKit
-    >
-    >- **WebKit** is an open-source web browser engine used to render web content such as HTML, CSS, and JavaScript.
-    >- It is the engine behind popular browsers like Safari and Chrome (Blink is a fork of WebKit).
-    >
-    >**Applications in IVI and Digital Cockpits**
-    >
-    >- Integrated Web Browsers:
-    >  - Allows drivers and passengers to access online content directly from the infotainment system.
-    >- Web-Based Apps:
-    >  - Renders applications like weather, news, or restaurant finders.
-    >- Over-The-Air Updates (OTA):
-    >  - Provides a UI for updating vehicle software via web-based services.
-    >- Cloud Integration:
-    >  - Displays live data such as traffic updates, stock market information, or calendar events.
-    >
-    >**Benefits**
-    >
-    >- Supports modern **web standards** (HTML5, CSS3, JavaScript).
-    >- Lightweight and optimized for **embedded systems**.
-    >- Ensures **fast rendering** and a smooth browsing experience.
-    >
-    >------------------------
-
-    ****
-
-    >#### 3. Media Framework for Audio/Video Playback
-    >
-    >- A **Media Framework** is a collection of APIs and libraries for processing and rendering audio and video content.
-    >- Examples: **GStreamer, FFmpeg, Android Media Framework.**
-    >
-    >**Applications in IVI and Digital Cockpits**
-    >
-    >- Audio Playback:
-    >  - Plays music, podcasts, or audiobooks from local storage or streaming services.
-    >  - Integrates with voice assistants for seamless control.
-    >- Video Playback:
-    >  - Powers rear-seat entertainment screens or displays promotional videos.
-    >- Phone Integration:
-    >  - Provides hands-free calling and text-to-speech capabilities.
-    >- Surround Sound:
-    >  - Offers immersive audio experiences using vehicle-specific speaker configurations.
-    >
-    >**Benefits**
-    >
-    >- **Hardware-accelerated decoding** for smooth playback.
-    >- Support for multiple formats (MP3, AAC, H.264, etc.).
-    >- Low latency for real-time audio and video synchronization.
-    >
-    >------------------------------------
-
-    >**4. OpenMAX AL**
-    >
-    >**OpenMAX AL** (Application Layer) is a cross-platform multimedia API specification developed by **Khronos Group**. It is designed to provide a standardized way for applications to access **audio, video, and image processing** functionalities on different hardware platforms.
-    >
-    >The **OpenMAX AL** specification enables efficient multimedia processing by abstracting the low-level hardware details, allowing developers to write portable code across multiple platforms, including embedded systems like **Android Automotive**.
-    >
-    >**Features of OpenMAX AL**
-    >
-    >>1. Cross-Platform Compatibility:
-    >>   - Works across various hardware and operating systems, ensuring portability.
-    >>2. High-Performance Multimedia:
-    >>   - Optimized for multimedia playback, recording, and processing (e.g., audio/video streams).
-    >>3. Abstraction Layer:
-    >>   - Provides an interface between applications and low-level multimedia components.
-    >>4. Modular and Scalable:
-    >>   - Supports modular architecture, making it scalable for applications requiring complex media operations.
-    >>
-    >>**Usage in Android Automotive**
-    >>
-    >>In Android Automotive systems, **OpenMAX AL** is used to facilitate high-performance multimedia tasks, such as:
-    >>
-    >>- **Audio Playback**: Playing music from the car's infotainment system.
-    >>- **Video Playback**: Rendering videos for rear-seat entertainment systems.
-    >>- **Voice Command Processing**: Handling audio input for voice recognition features.
-    >>- **Camera and Media Recording**: Capturing video streams for advanced driver-assistance systems (ADAS) or parking cameras.
-    >
-    >**Differences Between OpenMAX AL and Media Framework**
-    >
-    >| **Aspect**               | **OpenMAX AL**                                               | **Media Framework**                                          |
-    >| ------------------------ | ------------------------------------------------------------ | ------------------------------------------------------------ |
-    >| **Level of Abstraction** | Low-level, close to hardware                                 | High-level, easier to use                                    |
-    >| **Real-Time Processing** | Designed for **low-latency** and **real-time** audio/video processing | Primarily designed for **non-real-time** tasks like playback |
-    >| **Control**              | Provides **fine-grained control** over multimedia components (e.g., codecs) | Provides **abstracted control** with simpler APIs for tasks like media playback |
-    >| **Latency**              | Optimized for **real-time performance** (critical for applications like voice recognition or live video feeds) | Can handle tasks that have higher latency, such as playing stored video or audio |
-    >| **Use Case Focus**       | Ideal for tasks requiring **high performance** and **low latency** (e.g., live streaming, voice commands) | Ideal for standard **media playback** tasks (e.g., playing music, video files) |
-    >| **Example Application**  | **Voice command recognition**, **live video feeds** from cameras, **ADAS** video streams | **Music streaming**, **video playback**, **video conferencing** |
-    >
-    >**When to Use Each in Android Automotive**
-    >
-    >- **Use OpenMAX AL** when you need **real-time control**, **low-latency processing**, and direct access to hardware components. This is particularly important for tasks such as:
-    >  - **Voice Command Recognition**: For example, recognizing "navigate to the nearest gas station" in the car's voice assistant system, where low latency is critical for a seamless user experience.
-    >  - **Live Video Feeds**: For instance, processing video from cameras such as rear-view or surround-view cameras in real time to assist with parking or driver assistance features (ADAS).
-    >  - **Real-Time Audio Capture**: For capturing and processing audio inputs for applications like voice-based navigation or in-car conferencing, where a fast response is necessary.
-    >- **Use the Media Framework** for **general media tasks** like music playback, streaming video content, or non-realtime audio/video processing where ease of use and quick setup are preferred. Examples include:
-    >  - **Music Streaming**: Playing music from a connected smartphone or media server through the in-car entertainment system (**Spotify**).
-    >  - **Video Playback**: Streaming videos to rear-seat entertainment screens for passengers .
-    >  - **Podcast or Audiobook Playback**: Streaming audio content with minimal processing, ideal for non-interactive listening.
-
-    
-
-    >#### 5. *Libc* for System Operations
-    >
-    >- Libc is the standard C library used by operating systems for basic system-level functions such as:
-    >  - File I/O (Input/Output).
-    >  - Memory management.
-    >  - Process and thread handling.
-    >- Example implementations: **glibc (GNU C Library), musl, Bionic (Android).**
-    >
-    >**Applications in IVI and Digital Cockpits**
-    >
-    >- System Resource Management:
-    >  - Manages memory and processing resources for running IVI and cockpit applications.
-    >- File Handling:
-    >  - Reads and writes files, such as navigation logs or media storage.
-    >- Thread Management:
-    >  - Handles multithreading for real-time tasks like sensor data processing.
-    >- Low-Level Communication:
-    >  - Provides essential services for communication between hardware (sensors, actuators) and software.
-    >
-    >**Benefits**
-    >
-    >- Efficient handling of **low-level system operations**.
-    >- Ensures **stability and reliability** in real-time environments.
-    >- Portable across **different operating systems**.
-    >
-    
-    
-    
-    >#### **6. SSL (Secure Sockets Layer)**
-    >
-    >In Android's native layer, **SSL** is implemented using **OpenSSL** or **BoringSSL** (a Google-maintained fork of OpenSSL). It provides security and encryption capabilities for network communication, ensuring confidentiality, data integrity, and authentication. SSL ensures that apps can securely transmit sensitive user data like passwords, payment details, and personal information, protecting against attacks like **man-in-the-middle (MITM)**.
-    >
-    >**Features**:
-    >
-    >1. **Encryption**:
-    >   - Encrypts data transmitted over the network to protect against eavesdropping.
-    >   - Uses symmetric and asymmetric encryption (e.g., AES, RSA).
-    >2. **Data Integrity**:
-    >   - Ensures that transmitted data is not tampered with during transit using cryptographic hash functions like SHA-256.
-    >3. **Authentication**:
-    >   - Validates the identity of the communicating parties using SSL/TLS certificates.
-    >4. **TLS Support**:
-    >   - Android supports modern TLS versions (TLS 1.2, TLS 1.3) for improved security and performance.
-    >5. **Certificate Management**:
-    >   - Handles SSL certificates for HTTPS communication.
-    >   - Validates certificates using Android's trust store.
-    >
-    >**Real-World Use Cases**:
-    >
-    >- **HTTPS Communication**: Ensures secure communication between mobile apps and servers.
-    >- **Secure Web Browsers**: Apps like Chrome rely on SSL/TLS for secure browsing.
-    >- **IoT Devices**: Secures data exchanged between Android devices and IoT systems.
-    >
-    >------------------------------------------
-    >
-    >#### **7. FreeType**
-    >
-    >**FreeType** is a widely-used, open-source library for rendering fonts. It supports various font formats like **TrueType**, **OpenType**, and **Bitmap Fonts**. In Android, FreeType is part of the native layer and is used for rendering text across the system.
-    >
-    >**Features**:
-    >
-    >1. **Font Rendering**:
-    >   - Converts font glyphs (characters) into pixel-based images for display on screens.
-    >2. **Scalable Vector Fonts**:
-    >   - Supports scalable vector fonts, ensuring high-quality text rendering regardless of screen resolution.
-    >3. **Font Hinting**:
-    >   - Optimizes the placement of font pixels for better readability on low-resolution displays.
-    >4. **Multi-Language Support**:
-    >   - Handles a wide variety of scripts and languages, including complex scripts like Arabic and Indic languages.
-    >5. **Custom Glyphs**:
-    >   - Allows apps or systems to load and render custom fonts or icons.
-    >
-    >**Real-World Use Cases**:
-    >
-    >- **Text Rendering in UI**:
-    >  - Android uses FreeType to render text in apps, system notifications, and UI elements.
-    >- **Games and Graphics**:
-    >  - Game developers use FreeType in Android NDK projects to render custom fonts in games.
-    >- **Custom Typography**:
-    >  - Apps like word processors and graphic design tools use FreeType for advanced font rendering and customization.
-    >
-    >
-    
-    >---------------------------
-    
-    >| **Technology**      | **Purpose**            | **Key Feature**                                             | **Example Application in IVI**                               |
-    >| ------------------- | ---------------------- | ----------------------------------------------------------- | ------------------------------------------------------------ |
-    >| **OpenGL ES**       | Graphics Rendering     | 2D/3D rendering, GPU acceleration                           | Speedometer, 3D maps, customizable instrument clusters       |
-    >| **WebKit**          | Web Content Rendering  | HTML5, CSS3, JavaScript support                             | Integrated web browser, OTA updates                          |
-    >| **OpenMAX AL**      | Audio/Video Processing | Low-latency, real-time audio/video processing, codec access | Voice command recognition, live video feeds (ADAS), real-time audio capture |
-    >| **Media Framework** | Audio/Video Processing | Hardware decoding, multiple codec support                   | Music streaming, rear-seat video playback                    |
-    >| **Libc**            | System Operations      | File I/O, memory/thread management                          | Managing application processes and system-level tasks        |
-
-- Native libraries are written in **C/C++** for better performance.
-
-**Native C/C++ Libraries Role in Android Automotive**:
-
-- These libraries power essential functionalities such as graphics rendering for **navigation maps**, media playback for **music and videos**, and system performance.
-- **Media Framework** is used for in-car **audio systems** to decode audio files seamlessly.
-
-**Example**:
-
-- Displaying **Google Maps** in the car's head unit uses **OpenGL ES** for smooth rendering of navigation visuals.
-- Playing music from applications like **YouTube Music** relies on **Media Framework** to decode audio files efficiently.
-
--------------------
-
-### **1.4. Android Run Time ART**
-
-![image-20241216224143077](README.assets/image-20241216224143077.png)
-
-The **Android Runtime** (ART) is the managed runtime used by Android devices to run applications. It's responsible for executing and managing the code written in Java or Kotlin. ART uses ahead-of-time (AOT) compilation, where the bytecode of an app is compiled into native machine code during the installation process. This results in faster app startup times and improved overall performance. ART also includes features like just-in-time (JIT) compilation, garbage collection, and memory management to optimize app execution. With ART, Android devices can efficiently run a wide range of applications while providing a smooth and responsive user experience. 
-
-Every Android application runs in its own  **own isolated runtime environment**,, called a **sandbox**, to:
-
-- Prevent one app from directly accessing another app's data.
-
-- Contain any potential damage if an app becomes malicious or compromised.
-
-  >Sandboxing is a core security mechanism in Android. 
+# Android Platform Architecture (AOSP) — Layer by Layer
+
+> **Source baseline:** paths, classes, methods and line numbers were checked against **AOSP`android-17.0.0_r1`** .
+
+| Label | Meaning |
+|---|---|
+| **Verified in source** | Read in the AOSP 17 tree or build output |
+| **Official documentation** | source.android.com / developer.android.com |
+| **General concept** | Standard Linux / computing knowledge, not AOSP-specific code |
+| **Version-dependent** | Changed between Android releases |
+| **Illustrative** | Teaching example, not real AOSP code |
+
+**Prerequisites:** [Linux vs Android](../01.LinuxVsAndroid/README.md).
+
+**After this chapter you should be able to:**
+
+1. Name the layers of the Android stack **and** say which **process** each part runs in. Layers and
+   processes are different things.
+2. Explain which "Android kernel features" still exist, which were replaced, and by what.
+3. Explain the three generations of HALs (legacy, HIDL, AIDL) and how VINTF declares them.
+4. Explain how ART runs apps: DEX, `dex2oat`, compiler filters, profiles, JIT, GC.
+5. Explain Manager vs Service: how `getSystemService()` reaches a service in `system_server`.
+6. Explain Binder end to end: driver, ServiceManager, AIDL Proxy/Stub (with real generated code),
+   death notifications.
+7. Trace a real hardware access from an app to a HAL: the accelerometer.
+
+---
+
+## Table of Contents
+
+- [0. What is AOSP?](#0-what-is-aosp)
+- [1. The stack: layers vs processes](#1-the-stack-layers-vs-processes)
+- [2. Linux kernel layer](#2-linux-kernel-layer)
+- [3. Hardware Abstraction Layer (HAL)](#3-hardware-abstraction-layer-hal)
+- [4. Native layer: libraries and daemons](#4-native-layer-libraries-and-daemons)
+- [5. Android Runtime (ART)](#5-android-runtime-art)
+- [6. Java API Framework and System Services](#6-java-api-framework-and-system-services)
+- [7. Binder IPC and ServiceManager](#7-binder-ipc-and-servicemanager)
+- [8. Application layer and the app sandbox](#8-application-layer-and-the-app-sandbox)
+- [9. End-to-end real example: an app reads the accelerometer](#9-end-to-end-real-example-an-app-reads-the-accelerometer)
+- [10. How AAOS maps onto these layers](#10-how-aaos-maps-onto-these-layers)
+- [11. Common misconceptions](#11-common-misconceptions)
+- [12. Source map](#12-source-map)
+
+---
+
+## 0. What is AOSP?
+
+The **Android Open Source Project (AOSP)** is the open-source code base of Android, led by Google.
+It contains everything needed to build a working Android system image:
+
+- the user-space platform: `init`, native daemons, ART, the Java framework, system services;
+- the HAL interface definitions and reference implementations;
+- core system apps;
+- the build system (Soong/Blueprint + Make);
+- the tests (CTS/VTS).
+
+It does **not** contain:
+
+- **Google Mobile Services / Google Automotive Services** (Play Store, Google Maps, Play Services),
+  which are proprietary and licensed separately;
+- most **vendor code**: SoC drivers, proprietary HAL implementations, bootloaders;
+- **kernel source**. Kernels live in separate repositories, and your trees only include
+  `kernel/prebuilts/`.
+
+Device makers (Samsung, Xiaomi, car OEMs…) take AOSP, add their hardware support and customizations,
+and ship their own Android builds.
+
+> **Official documentation note:** Google announced that from 2026 AOSP source is published twice a
+> year (Q2 and Q4), with `android-latest-release` as the recommended branch. Your trees are tagged
+> `android-17.0.0_r1` (A17) and an Android 15 `ap3a` release.
+
+---
+
+## 1. The stack: layers vs processes
+
+![Android software stack](README.assets/android-stack_2x.png)
+
+The classic picture shows **layers**: kernel → HAL → native libraries + ART → Java framework → apps.
+That picture describes **code dependencies**. It does **not** tell you which process code runs in,
+and confusing the two is the most common architecture mistake. The process view is:
+
+```mermaid
+flowchart TB
+    INIT["<b>init</b> (PID 1)"]
+    ZY["<b>zygote64</b><br/>ART loaded here"]
+    APP["<b>App process</b><br/>app code<br/>+ framework classes<br/>+ ART"]
+    SS["<b>system_server</b> (Java)<br/>ActivityManagerService<br/>WindowManagerService<br/>PackageManagerService<br/>LocationManagerService<br/>SensorService<br/>(native, in-process)<br/>…"]
+    NAT["<b>Native daemons</b><br/><i>started by init</i><br/>servicemanager<br/>surfaceflinger<br/>audioserver, cameraserver<br/>logd, lmkd, vold, netd …"]
+    HAL["<b>HAL processes</b> (vendor)<br/><i>started by init</i><br/>sensors HAL service<br/>vehicle HAL service (AAOS)<br/>…"]
+    K["<b>Linux kernel</b><br/>Binder driver<br/>/dev/binder<br/>/dev/hwbinder<br/>/dev/vndbinder<br/>+ device drivers"]
+
+    INIT -- starts --> ZY
+    ZY -- forks --> APP
+    ZY -- forks --> SS
+    APP -. Binder .-> SS
+    SS -. Binder .-> NAT
+    SS -. Binder .-> HAL
+    NAT == system calls === K
+    HAL == system calls === K
+
+    classDef kernel fill:#eee,stroke:#888
+    class K kernel
+```
+
+Solid arrows show who starts or forks a process; dashed arrows are Binder calls, and every one of them
+passes through the kernel's Binder driver (an `ioctl` on `/dev/binder`). The thick "system calls" lines
+are drawn only from the bottom row to keep the picture readable; in reality **every** process above,
+including `init`, `zygote64`, apps and `system_server`, calls into the kernel the same way. Process names in the HAL box are shortened: the real binaries
+are named like `android.hardware.sensors-service…` and `android.hardware.automotive.vehicle@V…-service`.
+
+**Key observations (Verified in source):**
+
+- **"Framework" code runs in two places.** Classes such as `LocationManager` run **inside the app
+  process**. The matching service, `LocationManagerService`, runs **inside `system_server`**
+  ([§6](#6-java-api-framework-and-system-services)).
+- **Native libraries** such as libc, libbinder and Skia are loaded **into** many processes. **Native
+  daemons** such as `surfaceflinger` and `servicemanager` are their **own** processes, started by
+  `init` (for example `frameworks/native/services/surfaceflinger/surfaceflinger.rc`: `service
+  surfaceflinger /system/bin/surfaceflinger`, `user system`).
+- **ART** is not a process. It is the runtime library loaded into Zygote and inherited by every
+  Java process ([Boot §5](../07.AndroidBootingSequence/README.md#5-zygote)).
+- **HAL implementations** are usually separate **vendor processes**, reached through Binder
+  ([§3](#3-hardware-abstraction-layer-hal)).
+
+### Typical components in each layer
+
+A common way to teach the stack is to fill each layer with real components:
+
+```mermaid
+flowchart TB
+    subgraph L1["Applications"]
+        direction LR
+        a1["Custom app"] ~~~ a2["Home"] ~~~ a3["Calculator"] ~~~ a4["Calendar"]
+    end
+    subgraph L2["Android API and framework"]
+        direction LR
+        f1["Activity Manager"] ~~~ f2["Window Manager"] ~~~ f3["Package Manager"] ~~~ f4["Notification Manager"] ~~~ f5["View system"]
+    end
+    subgraph L3["System services and their hosts"]
+        direction LR
+        s1["system_server"] ~~~ s2["surfaceflinger"] ~~~ s3["mediaserver,<br/>audioserver, cameraserver"]
+    end
+    subgraph L4["Android runtime"]
+        r1["ART (in Zygote and every Java process)"]
+    end
+    subgraph L5["HAL (AIDL)"]
+        direction LR
+        h1["android.hardware.usb"] ~~~ h2["android.hardware.wifi"] ~~~ h3["android.hardware.power"]
+    end
+    subgraph L6["Native daemons and libraries"]
+        direction LR
+        n1["init"] ~~~ n2["libbinder"] ~~~ n3["storaged"] ~~~ n4["logd"] ~~~ n5["installd, vold,<br/>adbd, update_engine"]
+    end
+    subgraph L7["Kernel"]
+        direction LR
+        k1["Binder driver"] ~~~ k2["USB driver"] ~~~ k3["Wi-Fi driver"] ~~~ k4["PMIC driver"]
+    end
+    subgraph L8["Hardware"]
+        direction LR
+        w1["USB device"] ~~~ w2["Wi-Fi chip"] ~~~ w3["PMIC"]
+    end
+    L1 ~~~ L2 ~~~ L3 ~~~ L4 ~~~ L5 ~~~ L6 ~~~ L7 ~~~ L8
+```
+
+Notes on the usual version of this picture:
+
+- **HAL names:**  HIDL names such as `android.hardware.usb@1.0`. Current HALs are
+  **AIDL** (`android.hardware.usb`, `android.hardware.power`…), without `@` versions
+  ([§3](#3-hardware-abstraction-layer-hal)).
+- **Zygote** is often drawn inside "system services". It is the parent process of `system_server`
+  and of every app, not a service ([Boot §5](../07.AndroidBootingSequence/README.md#5-zygote)).
+- **`bluetoothd`** is sometimes drawn among the native daemons. Android has no such daemon: the
+  Bluetooth stack runs in the `com.android.bluetooth` app process.
+- `installd`, `vold`, `adbd` and `update_engine` (the A/B **OTA** updater) are native daemons, one
+  per privileged job ([Linux vs Android §4.3](../01.LinuxVsAndroid/README.md#43-init-and-user-space)).
+
+**Is every system service inside `system_server`?** No. Most Java services are
+(ActivityManagerService, PackageManagerService, WindowManagerService, PowerManagerService,
+InputManagerService…), but hardware-facing services were moved into their own processes for security
+and stability: `cameraserver` (CameraService), `audioserver` (AudioFlinger, AudioPolicyService),
+`media.extractor`, `media.swcodec`, `keystore2`, `surfaceflinger`. If one of them crashes, it does
+not take down `system_server`.
+
+---
+
+## 2. Linux kernel layer
+
+![Kernel layer](README.assets/image-20241216223622546.png)
+
+**Purpose:** the core of the OS. It owns the hardware and arbitrates all resources (CPU, memory,
+devices), and it enforces isolation between processes.
+
+**Tasks:**
+
+1. **Process and thread management:** scheduling, creation, signals.
+2. **Memory management:** virtual memory, page tables (MMU), page cache, reclaim.
+3. **Device drivers:** display, input, storage, audio (ALSA), camera (V4L2), network, CAN (SocketCAN),
+   and more.
+4. **Filesystems:** ext4, f2fs, EROFS (your Cuttlefish fstab mounts `system` as `erofs`, see
+   [Boot §4.2](../07.AndroidBootingSequence/README.md#42-first-stage--firststagemain)), plus
+   virtual filesystems.
+5. **Security:** UID/GID permissions, capabilities, **SELinux** (mandatory access control),
+   seccomp.
+6. **IPC primitives**, including the **Binder** driver, Android's main IPC.
+7. **Power management:** suspend/resume, wakeup sources, CPU frequency/idle.
+
+### Why Android uses the Linux kernel
+
+| Reason | Why it matters |
+|---|---|
+| Mature memory and process management | Isolation between apps (separate address spaces), efficient reclaim |
+| UID-based permission model | Android gives **each app its own Linux UID**, and the kernel enforces file and process boundaries ([§8](#8-application-layer-and-the-app-sandbox)) |
+| Shared libraries + copy-on-write `fork()` | Makes Zygote's preloading cheap |
+| Huge driver ecosystem, open source | SoC vendors already support Linux |
+| Security modules (SELinux) | Mandatory access control on top of UIDs |
+
+### "Android kernel features": what is true today
+
+The previous version of this chapter listed several Android kernel drivers that **no longer exist**.
+This table gives the current state.
+
+| Feature | Old mechanism (historical) | Current mechanism | Evidence |
+|---|---|---|---|
+| **IPC** | Binder (staging driver) | **Binder** in mainline Linux (`drivers/android/`), mounted as **binderfs**. Three device nodes: `/dev/binder` (framework/apps), `/dev/hwbinder` (HIDL HALs), `/dev/vndbinder` (vendor↔vendor) | Verified in source: `init.rc` lines 231–245: `mount binder binder /dev/binderfs`, `symlink /dev/binderfs/binder /dev/binder`, etc. |
+| **Shared memory** | `ashmem` driver (`/dev/ashmem`) | **`memfd`** (upstream `memfd_create`), used by `libcutils` when supported | Verified in source: `system/core/libcutils/ashmem-dev.cpp` line 218: `syscall(__NR_memfd_create, name, MFD_CLOEXEC \| MFD_ALLOW_SEALING)` |
+| **Buffer sharing (GPU/camera/display)** | **ION** allocator | **DMA-BUF heaps** (`/dev/dma_heap/<name>`). ION was disabled in Android 12 / GKI 2.0 kernels | Official documentation: "Transition from ION to DMA-BUF heaps". Verified library: `system/memory/libdmabufheap/` |
+| **Low memory killing** | In-kernel **lowmemorykiller** driver (removed upstream in kernel 4.12) | **`lmkd`**, a **user-space** daemon using **PSI** (Pressure Stall Information) | Official documentation (source.android.com lmkd). Verified: `system/memory/lmkd/lmkd.cpp` includes `<psi/psi.h>`, and `init.rc` `start lmkd` (line 461) |
+| **Logging** | Kernel "logger" driver (`/dev/log/*`) | **`logd`**, a **user-space** daemon with sockets `logd`, `logdr`, `logdw` (since Android 5.0) | Verified: `system/logging/logd/logd.rc` lines 2–4 |
+| **Alarms / wake from suspend** | Android "alarm driver" (`/dev/alarm`) | Upstream **`timerfd`** with `CLOCK_BOOTTIME_ALARM` / `CLOCK_REALTIME_ALARM` | Verified: `frameworks/base/apex/jobscheduler/service/jni/com_android_server_alarm_AlarmManagerService.cpp` lines 66–68 |
+| **Wakelocks** | Android wakelock patches | Upstream **wakeup sources** + `/sys/power/wake_lock`, managed by the **SystemSuspend** service | Verified: `system/hardware/interfaces/suspend/aidl/default/SystemSuspend.cpp` line 75 (`kSysPowerWakeLock = "/sys/power/wake_lock"`) |
+| **Scheduling for UI responsiveness** | Out-of-tree "interactive" tweaks | Upstream scheduler (EEVDF/CFS) + **Energy Aware Scheduling**, **uclamp**, **cgroups/cpusets**, driven from user space by **task profiles** | Verified: `system/core/libprocessgroup/profiles/task_profiles.json` (profiles such as `MaxPerformance`, `HighEnergySaving`, `ProcessCapacityHigh`). The zygote `.rc` uses `task_profiles ProcessCapacityHigh MaxPerformance` |
+| **Kernel source model** | Each vendor forked the kernel | **GKI**: one Google-built Generic Kernel Image + **vendor modules** (Android 12+, kernel 5.10+) | Official documentation. `external/avb/README.md`: "Starting from Android 12, devices launching with kernel version 5.10 or higher must ship with the GKI kernel" |
+
+> **Lesson:** most "Android kernel" differences have been **upstreamed or moved to user space**.
+> Today the Android kernel is mainline Linux (Android Common Kernel) plus a relatively small set of
+> patches, with vendor drivers as loadable modules.
+
+> **Note on the Rust Binder driver (General concept, external news):** the upstream kernel has been
+> moving to a Rust implementation of Binder. Public reports describe the Rust driver being merged in
+> Linux 6.18 and the C driver being removed later. Your trees only contain prebuilt kernels, so this
+> cannot be verified here.
+
+### Debugging tools 
+
+- **Kernel debugging:** `dmesg` / the kernel log, `ftrace`/`perfetto`, KGDB on development boards.
+- **`adb` is not a kernel debugger.** It is a user-space client/daemon (`adbd`) protocol for shell,
+  file transfer, logcat and install.
+
+### Kernel in AAOS (General concept + Verified examples)
+
+- Vehicle **cameras** are typically V4L2 devices. AAOS's EVS has a V4L2-based HAL:
+  `packages/services/Car/cpp/evs/v4l2_hal/`.
+- **CAN** controllers appear as SocketCAN network interfaces. AOSP includes a CAN HAL at
+  `hardware/interfaces/automotive/can/`.
+- **Audio** goes through ALSA drivers and the audio HAL. Power management must handle the car's
+  **suspend-to-RAM / hibernation** (see `init.car.rc` hibernation triggers in
+  [Boot §9](../07.AndroidBootingSequence/README.md#9-practical-automotive-scenario)).
+
+---
+
+## 3. Hardware Abstraction Layer (HAL)
+
+![HAL](README.assets/image-20241216223647751.png)
+
+### What is it?
+
+A **HAL** is a **standard interface** between the Android framework and device-specific
+hardware code. Google defines the interface, for example "a sensors HAL must provide
+`getSensorsList()`, `activate()`, …", and the device vendor writes the **implementation** for their
+chip.
+
+### Why do we need it?
+
+Without a HAL, framework code such as `SensorService` would need driver-specific code for every chip
+from every vendor. With a HAL:
+
+- the framework is written **once** against the interface;
+- each vendor implements the interface **once** for their hardware;
+- since **Project Treble** (Android 8.0), the interface is a **versioned, stable contract** between
+  the `system` partition (Google/AOSP) and the `vendor` partition (SoC/OEM). The framework can be
+  updated without rewriting vendor code;
+- vendors can keep their hardware code **closed**. The Linux kernel is **GPLv2**: whoever ships a
+  modified kernel, or a driver derived from it, must provide that source to the people who receive the
+  device. The kernel's license states that programs using it only through **normal system calls** are
+  not derived works (`LICENSES/exceptions/Linux-syscall-note`), and AOSP user space is **Apache 2.0**,
+  which has no source-sharing obligation. So vendors keep the kernel driver thin (and publish it) and
+  put the valuable logic, such as GPU drivers, camera image tuning and modem control, in a user-space
+  HAL. This is not the reason Google's HAL documentation gives (that is the abstraction above), but it
+  is a major reason the design suits vendors.
+- > **Apps and ART do not call HAL services.** A HAL's clients are platform processes, of three kinds:
   >
-  >**How Sandboxing Works**
+  > | Client kind | Example | HAL it calls |
+  > |---|---|---|
+  > | **Native daemon** (its own process, started by `init` from an `.rc` file) | `audioserver`, `cameraserver` (`frameworks/av/.../audioserver.rc`, `cameraserver.rc`) | Audio HAL, Camera HAL |
+  > | **`system_server`** (Java services, some with native code loaded through JNI) | `SensorService`, started in `SystemServer.java`, runs its native part `libsensorservice` inside `system_server` | Sensors HAL |
+  > | **Other privileged platform app** | CarService (`com.android.car`, its own process) | Vehicle HAL |
   >
-  >>1. **Linux Process Isolation**:
-  >>   - Each app runs in its **own Linux process**.
-  >>   - Android assigns each app a **unique Linux user ID (UID)** during installation.
-  >>   - The Linux kernel enforces security boundaries between processes using these UIDs.
-  >>2. **File System Isolation**:
-  >>   - Apps can only access their **own private data directory** located in `/data/data/<package_name>/`.
-  >>   - Other app directories are inaccessible unless explicitly shared via APIs (e.g., Content Providers).
-  >>3. **Permissions System**:
-  >>   - Apps must explicitly request permissions (e.g., camera, location) to access system resources or other apps' data.
-  >>
-  >>
-
-**ART Purpose**: ART executes applications written in Java or Kotlin.
-
-**ART Features**:
-
-- Converts Java bytecode into **native machine code** for execution.
-- Supports **Just-In-Time (JIT)** and **Ahead-Of-Time (AOT)** compilation for improved performance.
-- Provides **Core Libraries** for essential functionalities like threading, data structures, and networking.
-
->**Features of Android Runtime (ART)** :
->
->1. **Ahead-of-Time (AOT) Compilation**
->
->   **AOT** is the opposite of JIT; it compiles the code **before** the app is installed and run. In this process, the Android system compiles the application’s bytecode into native machine code during the app installation or build process. This compiled code is then directly executed by the device's processor, leading to quicker app startup and execution.
->
->   - **How it works**: The bytecode is compiled into machine code ahead of time, typically when the app is being packaged or installed. The compiled machine code is stored in the app’s APK (Android application package) and is ready to execute immediately after installation, eliminating the need for compilation during runtime.
->
->   - ART compiles the **bytecode** (DEX files) of an application into **native machine code** at the time of installation.
->   - This process happens **before the app runs** and reduces the need for repeated code interpretation during execution.
->   - Benefits:
->     - Faster app startup times.
->     - Reduced CPU usage during runtime, leading to better battery performance.
->     - Optimized execution for apps that require high performance, such as navigation systems or media applications in **Android Automotive**.
->   - Example:
->     - In a car dashboard app, the smooth loading of a **3D speedometer** (compiled to native code) ensures fast startup and responsive animations.
->
->------
->
->2. **Just-in-Time (JIT) Compilation**
->
->   **JIT** is a technique where code is compiled **at runtime**, meaning when the application is running on the device, rather than beforehand. This allows the system to compile methods and code paths that are actually needed, optimizing performance based on the actual execution patterns of the application.
->
->   **How it works**: When an application is executed, ART compiles the bytecode into native machine code just before it is needed. The compilation occurs while the app is running, and frequently used code can be cached to improve performance for subsequent executions.
->
->- While AOT compilation is great for static code, ART also supports **JIT compilation** for dynamic code execution.
->- During runtime, JIT compiles frequently used bytecode segments into **native code** in real-time to improve performance.
->- **Benefits:**
->  - Reduces installation time (as less pre-compilation is needed).
->  - Adapts performance in real time based on usage patterns.
->- Example:
->  - A navigation app in **Android Automotive** can optimize routes dynamically while the vehicle is in motion, improving responsiveness for frequently used map features.
-
-****
-
->**Android App build Process :**
->
->- **Source Code** : Developers write the app code in Java or Kotlin.
->
->- **Compilation to Java Bytecode (.class files): **The Java/Kotlin code is compiled using the **javac** or **Kotlin compiler** into intermediate **.class files**.
->
->- **Conversion to DEX (Dalvik Executable):**
->
-> - The **D8 compiler** (replacing DX) takes the `.class` files and generates a single or multiple **DEX files**.  
->
->   >The **D8** compiler is a tool used in the Android build system to **convert Java bytecode (.class files) into DEX (Dalvik Executable) bytecode**. It was introduced as a more efficient, faster, and modern replacement for the older **DX compiler**.
->   >
->   >**D8** takes the compiled **Java** or **Kotlin** `.class` files (produced by the `javac` or `kotlinc` compilers) and converts them into **DEX files**, which are the format used by the **Android Runtime (ART)** for executing code on Android devices.
->   >
->   >
->
-> - DEX files contain bytecode that the Android Runtime (ART) can execute.
->
->- **App Installation:**
-> - When the app is installed (or at first boot), ART triggers the **`dex2oat` tool** to perform Ahead-of-Time (AOT) compilation.
->
->- **dex2oat Compilation Process:**
->
-> - `dex2oat` converts the DEX bytecode into highly optimized **native machine code** for the target device architecture (ARM, ARM64, x86, x86_64).
->
-> - The compiled native code is stored in **OAT files**.
->
->   >**Input:** 
->   >
->   > `dex2oat`takes the following as input:
->   >
->   >- **App DEX files:** The compiled bytecode.
->   >- **App Resources:** Manifest, assets, etc.
->   >- **Target Architecture:** CPU architecture (e.g., ARM, ARM64).
->   >
->   >**Compilation:**
->   >
->   >- Intermediate Representation (IR):
->   >
->   >  `dex2oat` translates the DEX bytecode into an intermediate representation (IR) optimized for the target hardware.
->   >
->   >**Optimization:**   Various optimizations are applied, such as:
->   >
->   >- **Inlining:** Reducing function call overhead by embedding function code.
->   >
->   >- **Constant Folding:** Replacing constant expressions with precomputed values.
->   >- **Dead Code Elimination:** Removing unused or unreachable code.
->   >
->   >**Native Machine Code Generation:**
->   >
->   >- The IR is translated into **native machine code** specific to the CPU.
->   >
->   >**Output:**
->   >
->   >- The optimized native code is stored in an **OAT (Optimized Android Executable**) file:
->   >
->   >  ```kotlin
->   >  /data/dalvik-cache/arm64/system@app@dashboard.apk@classes.dex
->   >  ```
->   >
->   >**Verification:**
->   >
->   >- `dex2oat` verifies the integrity of the compiled code and ensures it matches the DEX input.
->
->- **OAT File Storage:**
->
-> - The OAT file is stored in the **/data/dalvik-cache** directory on the device.
->
-> - This directory holds optimized versions of app bytecode for faster execution.
->
->- **Runtime Execution** : Once the AOT compilation is complete:
->
-> - The **OAT file** containing native machine code is loaded directly into memory during app startup.
-> - This bypasses both **interpretation** and **JIT compilation**, ensuring faster startup and lower latency.
->
->```java
->Java/Kotlin Code → javac/Kotlin Compiler → .class Files → D8 Compiler → .dex Files ↓ 
->    <-------------------------------------<-----------------------------------<--  
->    ↓  
-> dex2oat (AOT Compilation) → Optimized Native Code → OAT Files in /data/dalvik-cache ↓     <-------------------------------------<-----------------------------------<-----   
->    ↓  
->    App Launch → Native Code Execution (Fast Startup, Minimal Latency)
->
->```
->
->----------
->
->**Examples for JIT and AOT in Android Automotive** :
->
->- Imagine an **infotainment system application** running on Android Automotive.
->
-> - When you launch the **Navigation app** for the first time, ART uses an **interpreter** to execute code.
->
-> - As you interact with the app (e.g., searching locations, zooming the map), ART identifies frequently executed methods (hot paths).
->
-> - ART **JIT-compiles** those hot methods into native machine code **on the fly** [in RunTime].
->
-> - This ensures that subsequent runs of the same operations (e.g., zooming in/out) are faster and optimized without recompiling the entire application.
->
->------------------
->
->- Consider a **Vehicle Dashboard app** that shows speed, RPM, and other critical information.
->
-> - Since this app is critical for real-time display and safety, it benefits from **AOT compilation**.
->
-> - During installation (or first boot), ART uses a tool like **dex2oat** to compile the app’s DEX bytecode into **native machine code** stored as **OAT files**.
->
-> - At runtime, the compiled code is directly executed, ensuring minimal latency and fast startup times for the dashboard display.
->
->-------------------------
->
-> **Continue ART Features**
->
-> 3. **Garbage Collection (GC)**
->
-> - ART introduces optimized **Garbage Collection** to manage memory efficiently.
->
-> - The GC process reclaims unused memory by removing objects that are no longer needed,  reducing memory leaks.
->
->   - Features :
->     - **Concurrent Garbage Collection**: Performs collection without freezing the app completely, ensuring a **smooth user experience**.
->     - **Low-Pause GC**: Minimizes interruptions during critical app operations.
->
->   - Benefits:
->     - Reduces app stutter and lag.
->     - Improves memory usage for apps that process large data (e.g., video processing, car diagnostics).
->
->   - Example:
->     - In an **Android Automotive Media System**, ART ensures seamless playback of music/video even as other processes run in the background.
->
->------
->
-> 4. **Memory Management**
->
-> - ART improves **heap memory management**, which is essential for apps running in constrained environments (e.g., car infotainment systems).
->
-> - Features :
->   - **Optimized Memory Allocation**: Faster allocation and deallocation of objects.
->   - **Compact Heap**: Reduces fragmentation and optimizes memory usage for smaller RAM devices.
->
-> - Benefits:
->   - Reduces memory overhead, leading to improved app stability.
->   - Efficient resource use for memory-constrained automotive hardware.
->
-> - Example:
->   - A diagnostic app that monitors **engine temperature, fuel levels**, and **RPM** uses memory efficiently to process real-time sensor data.
->
->------
->
->5. **Profile-Guided Optimization (PGO)**
->
->- ART uses **profile-guided optimization** to improve the performance of frequently executed code.
->
->- Based on app usage patterns, ART identifies **hot code paths** (the most frequently used parts of the app) and optimizes them.
->
->- Benefits:
->
-> - Improves app responsiveness for features used frequently.
-> - Enhances performance over time without requiring developer intervention.
->
->- Example Scenario : **Navigation App in Android Automotive**
->
-> Imagine you are using a **Navigation App** in an **Android Automotive** environment, where you frequently perform these actions:
->
-> - Launching the app.
->
-> - Searching for a destination.
->
-> - Zooming in/out on the map.
->
-> - Switching between "2D" and "3D" views.
->
-> When you first install and use the app, the performance may not be fully optimized because ART does not yet know which parts of the code are most frequently executed. But After that :
->
-> 1. **Profile Data Created:**
->    ART begins tracking method usage and stores this profiling data in a **profile file** (`*.prof`) inside the app’s cache directory.
->
->    ```kotlin
->    Method searchDestination - Executed 50 times (HOT)
->    Method zoomMap - Executed 30 times (HOT)
->    Method switchView - Executed 10 times (WARM)
->    ```
->
->------
->
-> 2. **Idle Time: Optimizing Hot Code Paths**
->
-> - After a period of app usage, when the **car is parked or idle** (low CPU activity), the system enters an idle state.
-> - ART uses the profile file to **AOT-compile hot methods** into optimized native code.
-> - **Compilation Tool:** `dex2oat` generates optimized **OAT (Optimized Android Executable)** files.
->
-> **What Happens Behind the Scenes:**
->
-> - The `searchDestination` and `zoomMap` methods, identified as “hot,” are compiled into **native machine code**.
-> - Less frequently used methods like `switchView` remain in interpreted or JIT-compiled form.
->
-> **Optimized Methods:**
->
-> ```c++
-> searchDestination → Optimized native code
-> zoomMap → Optimized native code
-> ```
->
->------
->
-> 3. **Subsequent Runs: Faster Performance**
->
-> - On the next launch of the **Navigation App**, ART loads the precompiled native code for the **hot methods** (`searchDestination` and `zoomMap`) directly.
-> - This bypasses interpretation or JIT compilation, leading to:
->   - Faster **startup time**.
->   - Improved **responsiveness** when frequently used features are triggered.
->
-> **Example Interaction Results:**
->
-> - Searching for a destination now executes the optimized native version of `searchDestination`, reducing latency.
-> - Zooming in/out on the map feels much smoother due to optimized `zoomMap`.
->
->------
->
-> 4. **Continuous Adaptation: Evolving Profile Data**
->
-> - As you continue to use the app, ART dynamically updates the **profile file**.
->
-> - For example, if you start frequently switching between "2D" and "3D" views:
->
->   ```c
->   Method switchView - HOT (now executed 50 times)
->   ```
->
-> - During the next idle period, ART recompiles `switchView` into optimized native code.
->
-> **Result:**
->
-> - ART continuously adapts to your app usage patterns, ensuring the most-used features remain highly optimized.
->
->------
->
-> 5. **Benefits Observed Over Time:**
->
-> - **Improved App Responsiveness:** Hot methods execute faster.
-> - **Efficient CPU Usage:** Less JIT compilation at runtime reduces CPU load.
-> - **Battery Efficiency:** Optimized code consumes less power.
-> - **Seamless Adaptation:** ART automatically improves app performance without developer intervention.
->
->------------------------
->
->**ART Features**
->
->| **Feature**                     | **Description**                                              | **Example in Android Automotive**                            |
->| ------------------------------- | ------------------------------------------------------------ | ------------------------------------------------------------ |
->| **Ahead-of-Time (AOT)**         | Compiles bytecode to native machine code during installation for faster startup. | Fast loading of a **speedometer app** in a car dashboard.    |
->| **Just-in-Time (JIT)**          | Dynamically compiles frequently used code during runtime for better performance. | Real-time route optimization in **navigation apps**.         |
->| **Garbage Collection (GC)**     | Efficient memory management with low-pause GC for smooth app execution. | Seamless playback in **media apps** without stuttering.      |
->| **Memory Management**           | Optimized memory allocation and heap compaction to reduce overhead. | Real-time diagnostics of **engine data** without performance drops. |
->| **Profile-Guided Optimization** | Optimizes frequently executed code based on usage patterns.  | Smooth access to frequently used **media library** functions. |
->| **Multi-Architecture Support**  | Supports ARM, x86, and MIPS architectures for broad compatibility. | Ensures compatibility with diverse **automotive processors**. |
->
->
-
-------------------------
-
-##### Dalvik Virtual Machine Vs ART
-
->**1. Dalvik Virtual Machine (DVM)**
->
->The **Dalvik Virtual Machine (DVM)** was the runtime environment for Android applications in earlier versions of Android (prior to Android 5.0, Lollipop). It is designed specifically for Android to optimize memory usage and performance on devices with limited resources.
->
->**How does Dalvik VM work?**
->
->1. **Each Application Gets Its Own VM**:
->
->   - Dalvik operates with **multiple instances** of small virtual machines.
->   - Each Android application runs in its **own instance of the Dalvik VM**.
->   - These VMs run as  independent Linux processes.
->     - This isolation ensures that if one application crashes, it does not affect other apps or the system.
->
->   - Dalvik VM uses a **Just-in-Time (JIT)** compiler.
->   - This means that:
->     - **At runtime**, when an app is launched, its bytecode (from `.dex` files) is interpreted and compiled into machine code **on the fly**.
->     - The compiled machine code is cached temporarily during the app session.
->   - Each time the app is restarted, **JIT compiles the code again**, as the cache is not persistent.
->
->2. **Performance Implications**:
->
->   - JIT allows for quicker installation because only the bytecode is loaded initially.
->   - However, **frequent recompilation during app launches and execution** can slow down performance, especially for compute-intensive apps.
->   - JIT also increases **battery and CPU usage** because compilation happens during runtime.
->
->**2. Android Runtime (ART)**
->
->**Android Runtime (ART)** replaced Dalvik VM starting with **Android 5.0 (Lollipop)**. ART is the **default runtime** in all modern Android versions.
->
->#### **How does ART work?**
->
->1. **Ahead-of-Time (AOT) Compilation**:
->   - ART uses **Ahead-of-Time (AOT)** compilation.
->   - During the installation of an app, ART compiles the app's bytecode (.dex files) into native machine code.
->     - This is a **one-time process** during installation.
->     - The compiled machine code is stored in the device's storage.
->   - When the app is launched, the system directly executes the pre-compiled machine code without the need for runtime compilation.
->2. **Hybrid JIT+AOT (Post Android 7.0)**:
->   - Starting with Android 7.0 (Nougat), ART introduced a hybrid model:
->     - **AOT Compilation** during app installation.
->     - **JIT Compilation** for additional optimizations during runtime.
->     - ART also uses **profile-guided compilation** to optimize performance based on app usage patterns.
->3. **Performance Benefits**:
->   - AOT reduces the need for runtime compilation, resulting in **faster app launches** and **improved battery life**.
->   - However, the tradeoff is that app installations take longer because the bytecode is compiled during this process.
-
-#### -----------------------------------------------------------------------------------------------------------------------
-
-#### Core Libraries
-
-The **core libraries** are an essential component that provide fundamental functionality required for developing Android applications. These libraries enable Android applications to leverage the Java programming language and offer core APIs similar to standard Java libraries while being optimized for Android's unique runtime environment.
-
-**The core libraries are built to:**
-
-1. **Support Java Language Features**:
-   Provide implementations for many of the classes in standard Java, enabling the use of common features like collections, input/output, multi-threading, and other utilities.
-2. **Include Java 8 Features**:
-   Support some modern Java 8 features like **streams**, **default methods**, and **lambda expressions**, ensuring developers can use updated coding patterns.
-3. **Optimize for Android**:
-   While similar to standard Java SE libraries, they are tailored for mobile devices. They are lightweight, efficient, and optimized for Android's limited resources.
-
-**Components of Core Libraries** :
-
-1. **`java.lang` Package**:
-   This package contains fundamental classes and interfaces for the Java programming language.
-   - Examples:
-     - `String` (for string manipulation)
-     - `Object` (the root class of all classes)
-     - `Math` (for mathematical operations)
-     - `Thread` (for multi-threading)
-     - `System` (for system-level functionality like I/O streams and environment variables).
-2. **`java.util` Package**:
-   Provides utility classes for data structures, date and time, and collections.
-   - Examples:
-     - `ArrayList`, `HashMap`, and `HashSet` (for collections)
-     - `Date` and `Calendar` (for date-time operations)
-     - `Collections` (utility methods for collections)
-     - `Random` (for random number generation).
-3. **`java.io` Package**:
-   Provides classes for input and output operations, such as reading and writing files, streams, and objects.
-   - Examples:
-     - `File` (for file manipulation)
-     - `InputStream` and `OutputStream` (byte-based stream I/O)
-     - `Reader` and `Writer` (character-based I/O).
-4. **`java.net` Package**:
-   Supports networking functionality for communication over networks.
-   - Examples:
-     - `URL` and `URLConnection` (for working with URLs)
-     - `Socket` (for socket programming)
-     - `HttpURLConnection` (for HTTP requests).
-5. **`java.nio` Package**:
-   Provides classes for non-blocking I/O, buffers, and channels.
-   - Examples:
-     - `ByteBuffer` (for byte manipulation)
-     - `FileChannel` (for efficient file operations).
-6. **`java.security` Package**:
-   Provides classes and interfaces for encryption, decryption, and security management.
-   - Examples:
-     - `MessageDigest` (for hashing like MD5 or SHA-256)
-     - `SecureRandom` (for secure random number generation).
-7. **`java.util.concurrent` Package**:
-   Supports concurrent programming and multi-threading.
-   - Examples:
-     - `ExecutorService` (for thread pool management)
-     - `Future` (to represent asynchronous computation)
-     - `CountDownLatch` (for thread synchronization).
-8. **`org.json` Package**:
-   Provides classes to parse and handle JSON (JavaScript Object Notation) data.
-   - Examples:
-     - `JSONObject`
-     - `JSONArray`.
-9. **`javax.crypto` Package**:
-   Supports cryptographic operations like encryption and decryption.
-   - Examples:
-     - `Cipher` (for encryption and decryption)
-     - `SecretKey` (for secret key generation).
-
-**Android-Specific Additions to Core Libraries** :
-
-While ART supports many standard Java libraries, Android adds additional classes and optimizes existing ones for mobile usage. Examples include:
-
-1. **`android.util` Package**:
-   Includes utility classes specific to Android, like `Log` for logging and `SparseArray` for efficient key-value mapping.
-2. **`android.os` Package**:
-   Provides classes like `Handler`, `Looper`, and `Message` for threading and asynchronous tasks.
-3. **`android.text` Package**:
-   Supports text manipulation, including classes like `SpannableString` for styled text.
-
----------------------
-
-### 1.5. Java API Framework (Android Framework)
-
-The **Android Framework** layer is a critical part of the **Android stack** and sits **on top of the Android Runtime (ART)** and **native libraries**. It provides all the APIs, services, and tools needed for Android app development. This layer is written primarily in **Java** and serves as the interface between the application layer (user-developed apps) and lower-level components like ART, native libraries, and the Linux kernel.
-
-The Android Framework simplifies app development by providing reusable components, system services, and essential tools. It acts as the developer’s toolkit for building user interfaces, managing app behavior, accessing hardware, and handling data.
-
-
-
-![image-20241217203358309](README.assets/image-20241217203358309.png)
-
-#### Android Framework Managers :
-
-##### 1. **Activity Manager**
-
-- **Purpose**: Manages the **application lifecycle** and keeps track of activities (screens) in an app. It ensures smooth navigation by maintaining a **back stack** (the order of previous screens the user visited).
-- **Example**:
-  When you switch between apps, the Activity Manager pauses the current activity and resumes the new one.
-
-##### 2. **Package Manager**
-
-- **Purpose**: Handles all information about **installed applications** (APK files) on the device, such as permissions, version details, and app capabilities.
-- **Use Case**: It allows you to query app-related information programmatically.
-
-##### 3. **Window Manager**
-
-- **Purpose**: Manages windows (surfaces) displayed on the screen. It sits on top of **Surface Flinger** (the lower-level component that handles actual rendering).
-- **Role**: Handles **window placement, transitions, and drawing** for apps.
-- **Example**: When a popup dialog or keyboard appears, the Window Manager handles their positioning.
-
-##### 4. Resource Manager
-
-- **Purpose**: Manages all **non-code resources** of an app such as strings, images, layout files, styles, etc.
-- **Use Case**: Accessing externalized and localized resources (e.g., different languages).
-
-**5. Location Manager**
-
-The **Location Manager** provides access to location-related services. It allows apps to obtain the device's current location, track movements, and perform location-based tasks.
-
-**Features**:
-
-- **GPS and Network-based Location**: Access location information using GPS, Wi-Fi, or cellular networks.
-- **Location Updates**: Apps can request periodic location updates.
-- **Proximity Alerts**: Apps can register to receive alerts when entering or exiting a specified geographical area.
-- **Geocoding and Reverse Geocoding**: Convert addresses into latitude/longitude and vice versa.
-- **Last Known Location**: Retrieve the last known location of the device for quick access.
-
->- `requestLocationUpdates()`: Requests updates based on specified criteria (e.g., GPS or network-based).
->
->- `getLastKnownLocation()`: Fetches the last recorded location of the device.
->
->- `addProximityAlert()`: Registers proximity alerts for a specific latitude/longitude.
-
-**Real-World Use Cases**:
-
-- **Navigation Apps**: Google Maps uses the Location Manager to track a user’s real-time location for turn-by-turn directions.
-- **Geofencing Apps**: Apps like Find My Device or smart home apps trigger actions (e.g., unlocking a door) when the user enters a specific area.
-- **Fitness Apps**: Apps like Strava or Fitbit track location during running or cycling.
-
-**6. Notification Manager**
-
-The **Notification Manager** handles all notifications that an application can send to users. It manages system-wide notifications to inform users about important events, even when the app is not running.
-
-**Features**:
-
-- **Creating Notifications**: Enables apps to create and display notifications in the system's status bar.
-
-- **Customizable Notifications**: Notifications can include text, images, sounds, and actions (e.g., buttons for replies or dismissals).
-
-- **Notification Channels** (Android 8+): Apps must categorize notifications into user-configurable channels for better management.
-
-- **Foreground Services**: Notifications are used to indicate active services, such as music players or ongoing calls.
-
-  >#### **Primary APIs and Methods**:
-  >
-  >- `notify(int id, Notification notification)`: Displays a notification identified by a unique ID.
-  >- `cancel(int id)`: Removes a previously displayed notification by its ID.
-  >- `createNotificationChannel()`: Creates channels for grouping notifications based on their type (e.g., “Messages” or “Promotions”).
-
-**Real-World Use Cases**:
-
-- **Messaging Apps**: WhatsApp uses Notification Manager to notify users of new messages or missed calls.
-- **Alarm Apps**: Clock apps notify users of scheduled alarms.
-- **Media Players**: Apps like Spotify show playback controls in notifications.
-
-**7. Telephony Manager**
-
-The **Telephony Manager** provides information about the telephony services on the device, including cellular network details, SIM card status, and call states.
-
-**Features**:
-
-- Device and Network Information:
-  - Access to **IMEI** (International Mobile Equipment Identity) and **SIM serial number**.
-  - Information about the **network operator**, **country**, and **signal strength**.
-- **Call State Tracking**: Allows apps to monitor the current state of voice calls (e.g., ringing, off-hook, or idle).
-- **Subscriber Identity**: Access subscriber-related information like phone number and operator name.
-- **SMS and MMS Handling**: Enables sending SMS/MMS programmatically.
-
-> **Primary APIs and Methods**:
->
-> - `getNetworkOperatorName()`: Returns the name of the network operator (e.g., Verizon, AT&T).
-> - `getCallState()`: Retrieves the current state of a voice call.
-> - `getSimSerialNumber()`: Returns the SIM card's serial number.
-> - `sendDataMessage()`: Sends SMS/MMS messages programmatically.
-
-**Real-World Use Cases**:
-
-- **Caller ID Apps**: Apps like Truecaller use Telephony Manager to identify incoming callers.
-- **Roaming Apps**: Apps can determine whether the device is in roaming mode and manage connectivity accordingly.
-- **Dual SIM Management**: Apps manage dual-SIM functionalities, such as selecting the preferred SIM card for calls or SMS.
-
-##### **8. Content Providers**
-
-- **Purpose**: Enables sharing data between apps securely.
-- **Role**: Apps use content providers to access data (e.g., contacts, images) from other apps or expose their own data.
-- **Example**: The Contacts app exposes contact information using content providers.
-
-##### 9. **View System**
-
-- **Purpose**: Provides all the standard **UI components** (widgets) to create user interfaces.
-
-- **Components**:
-
-  - **TextView**: Displays text.
-  - **Button**: Handles click events.
-  - **ListView**: Displays lists.
-  - **WebView**: Embeds a web browser.
-
-- **Hierarchy Management**: The view system allows nesting views to create a complex UI layout.
-
-  -----------------------------------
-
-#### 10. **Lower-Level Hardware Services**
-
-The Android Framework provides APIs to interact with hardware components like **sensors**, **GPS**, and **Bluetooth**. These services expose hardware functionality to apps:
-
-1. **Location Services**: Provides access to GPS and location-based services.
-
-2. **Sensor Services**: Accesses device sensors like accelerometers, gyroscopes, etc.
-
-3. **Telephony Services**: Provides access to phone features like calls and SMS.
-
-4. **Bluetooth Services**: Manages Bluetooth connectivity.
-
-5. **WiFi Services**: Provides APIs to manage Wi-Fi connections.
-
-   --------------------------------------
-
-   #### 11. Service Manager
-
-   The **Service Manager** in the Android architecture plays a vital role in enabling **inter-process communication (IPC)** between different components, processes, and layers of the Android operating system. It is particularly important for connecting the **Android Framework layer** to **native services** that run in the **native libraries layer**.
-
-   The Service Manager itself is a part of the **Binder IPC system** and is responsible for **managing, registering, and locating services**.
-
-   **Responsibilities of the Service Manager** :
-
-   1. **Service Registration**
-      - Native services and system services register themselves with the **Service Manager** at boot time.
-      - Each service is registered with a **unique name** (e.g., "media.player", "custom_hardware").
-      - Services can be written in **C++ (native)** or in **Java**.
-   2. **Service Lookup**
-      - Clients (like an app or system service) can request a service by name.
-      - The **Service Manager** returns a **Binder handle** (proxy) to communicate with the requested service.
-   3. **Binder Handle Management**
-      - The Service Manager maintains a **mapping of service names to Binder handles**.
-      - Binder handles are used to facilitate communication between processes using **Binder IPC**.
-   4. **Service Discovery**
-      - Clients do not need to know where a service is running; they only need the name of the service.
-      - The **Service Manager** ensures that clients can discover services transparently.
-
-   ----------------------------------
-
-   **Role of Service Manager in the Android Framework Layer**
-
-   The **Service Manager** operates as part of the **Binder IPC** system. Its role can be seen clearly in how Android services are used:
-
-   1. **Framework APIs Request Services**:
-
-      - When you use a Framework API (e.g., `SensorManager`, `LocationManager`), these APIs use the Service Manager to **request the corresponding native service**.
-
-   2. **Service Registration and Access**:
-
-      - Services (e.g., SensorService, SurfaceFlinger) register with the Service Manager at system startup.
-
-      - When a Framework API requests a service by its name, the Service Manager returns a **Binder proxy** for the requested service.
-
-        >- **Binder Proxy**: Represents the remote service in the client process. It forwards method calls to the real service using Binder IPC.
-        >
-        >- **Binder Driver**: The low-level kernel component that manages the Binder transaction and delivers messages between processes.
-        >
-        >- A **Binder Proxy** is a **client-side representation** of a remote object (or service).
-        >- It does not contain the actual implementation of the service but forwards method calls to the real Binder object running in a different process.
-        >- The Binder Proxy is created **automatically** when a client process requests a remote service.
-        >
-        >**How does Binder Proxy work?**
-        >
-        >1. When an app or client process requests a service (e.g., `LocationManager`, `CameraManager`), the **ServiceManager** provides a **Binder Proxy** for that service.
-        >2. The **Binder Proxy** acts as a local object in the client process but **delegates method calls** to the actual service implementation running in the server process.
-        >3. The method calls are serialized into **Binder transactions** and sent to the **Binder Driver** in the kernel.
-        >4. The **Binder Driver** delivers the request to the server process, executes the real service implementation, and sends back the result to the client process.
-
-   3. **Decoupling Services**:
-
-      - The Service Manager ensures that the higher-level Java framework does not need to directly access native services; it only works with Binder proxies.
-      - This provides **abstraction** and **encapsulation** for system-level and hardware-level services.
-
-   ------------------------
-
-   **How the Service Manager Works**
-
-   **1. Registration of Services**
-
-   - At boot time, services register themselves with the **Service Manager** by calling its `addService` method.
-   - The registration process involves assigning each service a unique name and associating it with a Binder object.
-
-   **2. Service Lookup and Access**
-
-   - The **Service Manager** provides a way to look up services by name using `getService` methos.
-   - This allows clients to get a **Binder proxy object** and communicate with the service via Binder IPC.
-
-   **Binder IPC and Service Manager**
-
-   The **Service Manager** is tightly integrated with the **Binder IPC** mechanism, which is the foundation for communication between components in Android.
-
-   -------------------------------------------------------------------------
-
-   #### Binder IPC Mechanism:
-
-   1. **Binder Driver**: A kernel driver that enables IPC between processes.
-   2. **Service Manager**: A system process that manages service registration and lookup.
-   3. **Clients and Servers:**
-      - Servers register services with the Service Manager.
-      - Clients request services using the Service Manager.
-
-   -----------------------
-
-   **Flow of Service Communication**
-
-   Here’s the flow of communication through the Service Manager:
-
-   1. **Service Registration**:
-      - At boot time, system services (e.g., SurfaceFlinger, MediaPlayerService) or custom native services register themselves with the Service Manager.
-      - Registration includes a **unique name** and a **Binder object**.
-   2. **Client Request**:
-      - A client (like an app or higher-level service) requests a service using the **service name** via the Service Manager.
-   3. **Service Lookup**:
-      - The Service Manager locates the requested service and returns the **Binder proxy object** to the client.
-   4. **Binder IPC Communication**:
-      - The client communicates with the service through the Binder IPC mechanism using the returned **Binder handle**.
-
-   ---------------------------
-
-   **Diagram: Service Manager in Android Architecture**
-
-   ```java
-   [ Application Layer ]
-         ↓  (Java APIs)
-   [ Android Framework Layer ] 
-       ServiceManager.getService("service_name")
-         ↓
-   [ Service Manager (Binder Registry) ]  
-         ↔  (Binder IPC)
-   [ Native Services (C++ Services) ] 
-         ↓
-   [ Hardware Abstraction Layer (HAL) ] 
-         ↓
-   [ Hardware Drivers ]
-   ```
-
-   -------------------------------------------------------
-
-#### APIs in the Android Framework
-
-1. **User Interface (UI)**:
-   - `View` and `ViewGroup` for widgets.
-   - `Fragment` for modular UIs.
-   - `RecyclerView` for dynamic lists.
-2. **Data Management**:
-   - SQLite and Room for databases.
-   - SharedPreferences for key-value storage.
-3. **Notifications**:
-   - Enables sending alerts to users in the **status bar**.
-4. **Multimedia**:
-   - APIs for playing audio, video, and handling images.
-5. **Networking**:
-   - APIs for HTTP requests (e.g., `HttpURLConnection`).
-6. **Background Tasks**:
-   - Threads, AsyncTasks, and WorkManager for background execution.
-
-------
-
-### 1.6. Application Layer
-
-On the top of android framework, there are applications. All applications such as home, contact, settings, games, browsers and third party Apps are using android framework that uses android runtime and libraries. Android runtime and native libraries are using linux kernal.
-
-![image-20241217234537465](README.assets/image-20241217234537465.png)
-
-Android apps run within a **sandboxed environment** with limited access to device resources. To access certain features, an app must request permissions (e.g., camera, location, contacts) from the user at runtime. The system checks the app’s permissions to ensure that it is authorized to use specific hardware or system services. Android enforces **security sandboxing** to protect user data and prevent apps from accessing sensitive information without authorization. The **Android Manifest** defines the permissions each app needs to request for access to specific system resources (e.g., camera, location, storage).
-
----------------------------------------------------------------------------
-
-#### How Android App Access the Hardware 
-
-For example, if i have a custom sensor like Temperature sensor 
-
->1. **Application Layer** (Your Android App)
->
->Your Android app sends a request for temperature data (or any custom sensor data) to the **native service**. The app is interacting with the **Java API** you provide for your custom sensor, but it doesn’t directly deal with the low-level hardware. Instead, it communicates with the **Binder Proxy**.
->
->---------------------
->
->2. **Android Framework Layer**
->
->This layer provides the **ServiceManager**, which connects the app to the **Native Service** responsible for handling custom sensor requests. The **ServiceManager** will look for your **custom sensor service** in the **Native Layer**.
->
->For example, you might create a **TemperatureService** in your native C++ code (using the **Binder** framework) that handles requests for your custom temperature sensor.
->
->---------------------------
->
->3. **ServiceManager Role**
->
->The **ServiceManager** receives the request from the **Application Layer** and connects to the **Binder Proxy** in the **Native Service**. The **Binder Proxy** forwards the request to the **Binder Object** in the **Native Layer** where your **TemperatureService** is running.
->
->---------------------------------------
->
->4. **Native Services (C++ Services)**
->
->The **Native Service** (written in C++) will then process the request, which may involve reading data from your **custom temperature sensor**.
->
->- If the service is responsible for a custom sensor, it will query the **HAL** for data.
->- The **Native Service** could be the **TemperatureService** or something similar that you define, and it’s in charge of interacting with the HAL to fetch the sensor data.
->
->-------------------
->
->5. **Hardware Abstraction Layer (HAL)**
->
->The **HAL** abstracts the hardware interaction. In this case, it abstracts the communication with your **custom temperature sensor** hardware, translating the request for temperature data into something that the hardware understands.
->
->- The **HAL** may interact with your custom **hardware driver** (which you've written) to request the sensor's temperature reading.
->
->-----------------------------------------------
->
->6. **Hardware Driver**
->
->The **hardware driver** communicates directly with the **custom temperature sensor**. The driver retrieves the sensor data (e.g., temperature in Celsius or Fahrenheit) and sends it to the **HAL**.
->
->------------------------
-
->7. **Data Flow Back Up the Layers**
->
->After the data is retrieved by the **hardware driver**, it flows back up through the following layers:
->
->1. **Hardware Driver** → Sends temperature data to the **HAL**.
->2. **HAL** → Sends data to the **Native Service** (your **TemperatureService**).
->3. **Native Service** → Forwards the data back to the **Application Layer** via **Binder IPC**.
->4. **ServiceManager** → Helps connect the app to the **Native Service**.
->5. **Application Layer** → The app receives the temperature data.
->
->---------------
->
->**Data Flow (Custom Temperature Sensor)**
->
->1. **App (Application Layer)** → Requests temperature data (via your custom Java API).
->2. **Android Framework Layer** → **ServiceManager** finds and connects to your **Native Service** using **Binder IPC**.
->3. **Native Service (C++)** → Queries the **HAL** to get the temperature data.
->4. **Hardware Abstraction Layer (HAL)** → Sends request to the **Hardware Driver**.
->5. **Hardware Driver** → Communicates with the **custom temperature sensor** and retrieves the data.
->6. **Data flows back up** → Through **HAL**, **Native Service**, and **Android Framework** to the app.
-
----------------------------------------------------------------------------------
+  > An app calls a framework API. That API sends the request over Binder to one of these clients, and the client calls the HAL ([§9](#9-end-to-end-real-example-an-app-reads-the-accelerometer)). The one exception is **same-process HALs** (GPU driver, graphics mapper). These are libraries loaded into the app's own process, so the app calls them directly ([Before and after Treble](#before-and-after-treble)). *(Verified in source: `SystemServer.java:1459`, `services/core/jni/Android.bp:151`)*
+
+### Three generations of HALs
+
+| Generation | Introduced | How it works | Service registry | Evidence |
+|---|---|---|---|---|
+| **Legacy (libhardware)** | Early Android | A C struct `hw_module_t` in a shared library loaded **into the caller's process** with `hw_get_module()` from `/system`, `/vendor`, `/odm` `…/lib(64)/hw/` | none (`dlopen`) | Verified: `hardware/libhardware/hardware.c` line 275 `hw_get_module()`. Paths `HAL_LIBRARY_PATH1..3` (lines 48–50) |
+| **HIDL** | Android 8.0 (Treble) | Interfaces in the `.hal` language, usually **binderized** (separate process) over **`/dev/hwbinder`** | **`hwservicemanager`** | Verified: `system/libhidl/`, `system/tools/hidl/`, `system/hwservicemanager/` |
+| **AIDL HAL (stable AIDL)** | Android 11 (HIDL deprecated for new HALs from Android 13, Official documentation) | Same AIDL as framework services, `@VintfStability`, over **`/dev/binder`** | **`servicemanager`** | Verified: e.g. `hardware/interfaces/automotive/vehicle/aidl/`, `hardware/interfaces/sensors/aidl/` |
+
+**Version-dependent (A15 and A17, Verified):** `hwservicemanager` is installed as
+`/system/system_ext/bin/hwservicemanager` and declared `disabled`
+(`system/hwservicemanager/hwservicemanager.rc`). It is still explicitly started by `init.rc`
+(`start hwservicemanager`, line 465), and a device can stop it with `hwservicemanager.disabled=true`
+when it has no HIDL HALs left.
+
+### VINTF: declaring which HALs a device has
+
+**VINTF** (Vendor Interface Object, `system/libvintf/`) is how the system knows which HALs exist and
+whether system and vendor are compatible:
+
+- the **device manifest** (fragments on `/vendor/etc/vintf/`) says "this device **provides**
+  `android.hardware.automotive.vehicle.IVehicle/default` version 4";
+- the **framework compatibility matrix** (`hardware/interfaces/compatibility_matrices/compatibility_matrix.202604.xml`,
+  …) says which HALs and versions the framework **requires** or supports.
+
+Real fragment from the reference VHAL (`hardware/interfaces/automotive/vehicle/aidl/impl/current/vhal/vhal-default-service.xml`):
+
+```xml
+<manifest version="1.0" type="device">
+    <hal format="aidl">
+        <name>android.hardware.automotive.vehicle</name>
+        <version>4</version>
+        <fqname>IVehicle/default</fqname>
+    </hal>
+</manifest>
+```
+
+Clients use this declaration. For example, `SensorService` first asks
+`AServiceManager_isDeclared("android.hardware.sensors.ISensors/default")` and only then
+`AServiceManager_waitForService(...)`
+(`frameworks/native/services/sensorservice/AidlSensorHalWrapper.cpp`, lines 109–117). That way it
+waits only for HALs the device actually declares.
+
+**There are four VINTF files, not two** (Official documentation): each side publishes a **manifest**
+("what I provide") and a **compatibility matrix** ("what I need from the other side").
+
+| File | Owner | Says |
+|---|---|---|
+| Device manifest | vendor | HALs the device provides |
+| Framework compatibility matrix (FCM) | system | HALs (and versions) the framework can use |
+| Framework manifest | system | Services the framework provides to vendor code |
+| Device compatibility matrix | vendor | What the vendor needs from the framework (e.g. kernel config, VNDK version) |
+
+**When is compatibility checked?** Not by `init` at every boot. It is checked:
+
+1. at **build time** (`check_vintf`), so an incompatible image fails to build;
+2. before an **OTA** is applied, so an update that would break the device is rejected;
+3. by **VTS** tests;
+4. and at **run time for each service**: `servicemanager` refuses `addService()` for a
+   VINTF-stable Binder whose name is **not declared** in the manifest (Verified:
+   `frameworks/native/cmds/servicemanager/ServiceManager.cpp`, `meetsDeclarationRequirements()`,
+   called at line 537).
+
+### Project Treble: partitions and their owners
+
+Treble (Android 8.0) split Android's storage into partitions with **different owners**, so each
+party can update its part without rebuilding the others:
+
+```mermaid
+flowchart LR
+    U["End user"] -- "installed apps and data" --> UD["userdata (read/write)"]
+    OEM["Device maker (OEM/ODM)"] -- "board-specific customization" --> ODM["odm"]
+    OEM -- "product apps, branding" --> PR["product"]
+    SOC["SoC vendor"] -- "SoC BSP: HALs, libraries, firmware" --> VE["vendor"]
+    G["Google / AOSP + OEM"] -- "framework extensions" --> SE["system_ext"]
+    G -- "core Android framework" --> SY["system"]
+    classDef rw fill:#d6f5d6,stroke:#3a3
+    classDef ro fill:#fde2e2,stroke:#c66
+    class UD rw
+    class ODM,PR,VE,SE,SY ro
+```
+
+| Partition | Primary owner | Typical contents |
+|---|---|---|
+| `system` | Google (AOSP) | Core framework, `system_server`, core native services |
+| `system_ext` | Google or the OEM | Framework extensions that are not part of the generic system image |
+| `product` | OEM | Product apps, branding, regional customization |
+| `vendor` | SoC vendor (shipped by the OEM) | SoC-specific HAL implementations, libraries, firmware |
+| `odm` | ODM / OEM | Board-specific customization of the SoC BSP: camera tuning, display panel, touch, extra sensors |
+| `userdata` | End user | Installed apps and their data; the only big **read/write** partition |
+
+Everything except `userdata` (and small partitions such as `metadata`) is mounted **read-only** and
+verified by AVB ([Secure Boot and AVB](../07.AndroidBootingSequence/SECURE_BOOT_AVB.md)).
+
+**Two independent upgrade units** sit on either side of a stable interface:
+
+```mermaid
+flowchart TB
+    subgraph FW["Framework side (one upgradable unit)"]
+        direction LR
+        SYS["system"] <-->|"System SDK"| PRD["product · system_ext"]
+    end
+    ABI{{"Stable interface:<br/>AIDL/HIDL HALs · VINTF · VNDK (historical)"}}
+    subgraph HWU["Hardware side (one upgradable unit)"]
+        direction LR
+        VEN["vendor"] <--> OD["odm"]
+    end
+    FW --- ABI --- HWU
+```
+
+What each split allows (General concept):
+
+| Change | Partition rebuilt |
+|---|---|
+| New launcher, wallpapers, themes | `product` |
+| Better GPU driver from the SoC vendor | `vendor` |
+| New camera calibration for one board | `odm` |
+| New Android framework release | `system` (vendor can stay, within the vendor-freeze rules) |
+
+> **Real example from your build (Verified):** the A17 Cuttlefish output installs CarService in
+> `system/priv-app/CarService`, and some car apps in `system_ext/priv-app/`
+> ([AAOS §2.1](../06.AndroidAutomotiveArchitecture/README.md#21-applications)). Which partition a
+> module goes to is set in its build file (`system_ext_specific: true`, `product_specific: true`,
+> `vendor: true`…) ([Build System](../08.AndroidBuildSystem/README.md)).
+
+### Before and after Treble
+
+**Before Android 8**, there was no enforced boundary. Legacy HAL libraries (`.so`) were loaded
+**into framework processes** with `hw_get_module()`, sharing their process, address space and C++ ABI:
+
+```text
+Camera app → CameraService (framework process) → libcamera HAL .so (same process) → kernel driver
+```
+
+If Google changed what CameraService expected (say, a new function), the old vendor `.so` no longer
+matched. The SoC vendor had to rebuild its HAL, then the OEM had to rebuild the product. Every
+Android update needed new code from everyone, which made updates slow and expensive.
+
+> **Terminology:** this pre-Treble in-process HAL is a **legacy (conventional) HAL**. "**Passthrough**"
+> is a later HIDL mode that wraps such a legacy library behind a HIDL interface.
+
+**After Treble**, most HALs run as **separate vendor processes**, and the framework talks to them
+only through **versioned, stable interfaces** over Binder:
+
+```text
+App → CameraManager (app process)
+  ── Binder (AIDL) ──► CameraService (cameraserver, /system)
+  ══ stable AIDL HAL over Binder ══► camera provider HAL (vendor process, /vendor)
+  ── ioctl / system calls ──► camera driver (kernel) ──► sensor / ISP
+```
+
+| Component | Partition | Process |
+|---|---|---|
+| Camera app, `CameraManager` | app package, framework library | App process |
+| CameraService | `/system` | `cameraserver` |
+| Camera HAL (`android.hardware.camera.provider`) | `/vendor` | Vendor HAL process |
+| Camera driver | kernel / vendor modules | Kernel |
+
+> **Not every HAL became a process.** A few performance-critical **same-process HALs** are still
+> loaded into the caller, for example GPU (OpenGL ES / Vulkan) drivers and the graphics buffer
+> mapper. They are restricted to approved libraries instead of a Binder boundary.
+
+**"Stable" means the contract does not change** (it does not mean "does not crash"). A frozen
+interface version keeps working in later Android releases, even when the implementation behind it
+changes. That is what lets `/system` and `/vendor` be updated independently.
+
+### VNDK: native libraries across the boundary (historical)
+
+Binder interfaces cover **calls between processes**. Vendor binaries also **link** against native
+libraries, and before Treble they could link against any framework-internal library, so a
+`/system` update could break `/vendor` binaries at the **ABI** level.
+
+> **API vs ABI:** the **API** is the source-level contract (function declarations you compile
+> against). The **ABI** is the binary contract: symbol names, calling conventions, struct layouts.
+> A change can keep the API but break the ABI, and then already-compiled vendor code fails.
+
+Treble introduced the **VNDK** (Vendor Native Development Kit): a curated set of system libraries
+with a stable ABI that vendor code was allowed to use, enforced by **linker namespaces**.
+
+> **Version-dependent (Official documentation):** VNDK is **deprecated from Android 15**. Vendor
+> code is expected to rely on stable AIDL interfaces and on libraries shipped inside `/vendor` or in
+> APEXes instead.
+
+### HAL in AAOS
+
+The **Vehicle HAL** is the most important automotive HAL. Others include **EVS** (cameras),
+**AudioControl**, **CAN**, **Occupant Awareness** and **Remote Access** (`ls
+hardware/interfaces/automotive/`: `audiocontrol can evs ivn_android_device occupant_awareness
+remoteaccess vehicle`). Details in [AAOS Architecture §2.6](../06.AndroidAutomotiveArchitecture/README.md#26-vehicle-hal-vhal).
+
+---
+
+## 4. Native layer: libraries and daemons
+
+![Native libraries](README.assets/image-20241216223734770.png)
+
+The native (C/C++/Rust) layer contains **two different kinds of things**. Keep them separate:
+
+| Kind | What it is | Examples (Verified paths) |
+|---|---|---|
+| **Native libraries** | `.so` files **loaded into** other processes | `bionic/` (libc, libm, libdl, linker), `frameworks/native/libs/binder/` (libbinder), `external/skia/` (2D graphics), `external/boringssl/` (crypto/TLS), `external/sqlite/`, `external/freetype/`, `frameworks/native/opengl/` + `frameworks/native/vulkan/` (GPU API loaders), `frameworks/av/media/codec2/` (codecs), `frameworks/av/media/libaaudio/` |
+| **Native daemons / services** | **Separate processes** started by `init` | `servicemanager`, `surfaceflinger`, `logd`, `lmkd`, `vold`, `netd`, `audioserver`, `cameraserver`, `mediaserver`… |
+
+### 4.1 Bionic: Android's C library
+
+**What:** Android's own libc, libm and dynamic linker (`bionic/`).
+
+**Why not glibc?**
+
+- **License:** BSD-licensed, so it can be linked into proprietary vendor code without LGPL
+  obligations.
+- **Size:** smaller, designed for Android.
+- **Android integration:** the system property API (`__system_property_get`, see
+  [Boot §4.5](../07.AndroidBootingSequence/README.md#45-system-properties)), Android-specific
+  security hardening, and the linker namespaces used by Treble.
+
+### 4.2 Graphics: OpenGL ES, Vulkan, Skia, SurfaceFlinger
+
+- **OpenGL ES** (Khronos) is the embedded subset of OpenGL for GPU-accelerated 2D/3D rendering.
+  **Vulkan** is the modern, lower-overhead GPU API. AOSP provides the **loaders**
+  (`frameworks/native/opengl/`, `frameworks/native/vulkan/`), and the GPU vendor provides the drivers.
+- **Skia** (`external/skia/`) is the 2D graphics library behind Android's UI rendering (HWUI).
+- **SurfaceFlinger** (a native daemon) **composites** the buffers of all windows into the final frame
+  for each display.
+
+**How graphics is used in IVI and digital cockpits** (General concept, kept from the previous version):
+
+- **Gauges and clusters:** speedometer, RPM and warning indicators need smooth real-time rendering.
+- **Maps:** 3D navigation with zoom, rotate and terrain.
+- **Multiple displays:** driver cluster, center display and rear-seat screens rendered from the same
+  GPU. AAOS supports multi-display through display/occupant-zone configuration.
+- **Themes and day/night modes.**
+
+### 4.3 Web content: WebView 
+
+The previous version listed **WebKit** as an Android native library. That is **outdated**. Android
+renders web content with **Android System WebView**, a **Chromium**-based component shipped as an
+**APK**. In AOSP it is a prebuilt in `external/chromium-webview/`. Zygote prepares it with
+`WebViewFactory.prepareWebViewInZygote()` ([Boot §5.3](../07.AndroidBootingSequence/README.md#53-what-zygoteinitmain-really-does)).
+Blink, Chromium's engine, is a fork of WebKit, and Chrome itself is not WebKit-based.
+
+### 4.4 Media and audio (corrected)
+
+| Component | What it is | Status |
+|---|---|---|
+| **Media framework** (`MediaCodec`, `MediaPlayer`, `ExoPlayer`/Media3 in apps) | Java/NDK APIs for decoding, encoding and playback | Current |
+| **Codec 2.0** (`frameworks/av/media/codec2/`) | The codec HAL/framework that replaced OMX IL for vendor codecs | Current |
+| **OpenMAX IL** | Older codec component interface | Legacy, replaced by Codec 2.0 |
+| **AAudio** (`frameworks/av/media/libaaudio/`, `libaaudio.so`) | NDK **low-latency audio** API (API 26+) | **Recommended** native audio API (Official documentation) |
+| **OpenSL ES** (`frameworks/wilhelm/`, `libOpenSLES.so`) | Older Khronos native audio API | **Deprecated**. Use AAudio or the Oboe library (Official documentation) |
+| **OpenMAX AL** (`frameworks/wilhelm/include/OMXAL/`, `libOpenMAXAL.so`) | Khronos multimedia **application-level** API in the NDK (API 14+), with a limited Android implementation | Still shipped (Verified in build). **Not** the general low-latency path |
+
+### 4.5 Security: BoringSSL and Conscrypt 
+
+Android uses **BoringSSL** (`external/boringssl/`), Google's fork of OpenSSL. **OpenSSL itself is not
+in the platform** (there is no `external/openssl` in your tree). Java apps reach TLS through
+**Conscrypt** (`external/conscrypt/`), a Java security provider built on BoringSSL. They provide:
+
+- **Encryption** (AES, ChaCha20), **integrity** (SHA-256, HMAC), and **authentication**
+  (certificates, signatures);
+- **TLS 1.2/1.3** for HTTPS;
+- **Certificate validation** against the system trust store (`/system/etc/security/cacerts`, updatable
+  through the Conscrypt APEX in modern releases).
+
+Use cases: HTTPS from apps, OTA download verification, and secure car-to-cloud connections in
+connected-vehicle services.
+
+### 4.6 FreeType and text
+
+**FreeType** (`external/freetype/`) rasterizes font glyphs (TrueType/OpenType) into pixels.
+**HarfBuzz** shapes complex scripts such as Arabic and Indic scripts. Together with Minikin (Android's
+text layout library) they render every piece of text on screen.
+
+### 4.7 The NDK (for app developers)
+
+The **Android Native Development Kit** lets **apps** include C/C++ code. The code is compiled into
+`.so` files packaged in the APK and called from Kotlin/Java through **JNI**.
+
+- Apps may only use the **stable NDK APIs** (libc, libm, liblog, libandroid, AAudio, OpenGL ES,
+  Vulkan, Camera NDK, …). **Private platform libraries** (libbinder's C++ API, libutils…) are
+  **blocked** by linker namespaces since Android 7.0.
+- Typical use: performance-critical code (codecs, physics, signal processing) and reuse of existing
+  C/C++ libraries.
+
+**Illustrative AAOS scenario (corrected):** an app that computes average fuel efficiency could do the
+math in C++ via JNI. It would still **get the vehicle data from the Car API**
+(`CarPropertyManager`), because there is no NDK API for vehicle properties and apps cannot open the
+VHAL ([AAOS §7](../06.AndroidAutomotiveArchitecture/README.md#7-security-permissions-and-selinux)).
+
+---
+
+## 5. Android Runtime (ART)
+
+![ART](README.assets/image-20241216224143077.png)
+
+### 5.1 What is ART and why does Android need a runtime?
+
+Android apps are written in **Kotlin/Java**. They are compiled to **DEX bytecode** (Dalvik
+Executable), not to machine code. A **runtime** is needed to:
+
+1. **execute** DEX, by interpreting it or compiling it to native code;
+2. manage memory automatically (**garbage collection**);
+3. provide the core Java libraries (`java.lang`, `java.util`, …);
+4. bridge to native code (**JNI**);
+5. support debugging and profiling.
+
+**ART** (`art/` in AOSP, shipped as the updatable **ART APEX** `com.android.art`) is that runtime.
+It replaced **Dalvik**.
+
+**Why DEX and not plain Java `.class` files?** DEX merges all classes into one file with shared
+constant pools and uses a **register-based** instruction set. That makes it smaller and better
+suited to devices with limited RAM and flash.
+
+### 5.2 From source code to running code
+
+```mermaid
+flowchart LR
+    SRC["Kotlin / Java source"] -->|"kotlinc / javac"| CLS[".class files<br/>(Java bytecode)"]
+    CLS -->|"D8 (dexer) / R8 (shrink + dex)"| DEX["classes.dex<br/>inside the APK"]
+    DEX -->|"install / background:<br/>dex2oat (via artd)"| ART["Compiled artifacts<br/>.vdex  .odex/.oat  .art"]
+    DEX -->|"at run time"| INT["Interpreter"] --> JIT["JIT compiler<br/>(hot methods)"]
+    JIT -->|"saves"| PROF["Profile<br/>/data/misc/profiles/cur/…"]
+    PROF -->|"idle + charging:<br/>background dexopt"| ART
+```
+
+- **D8** converts `.class` to `.dex`. **R8** additionally shrinks and obfuscates code. Both replaced
+  the old DX tool.
+- **`dex2oat`** (`art/dex2oat/`) compiles DEX into native code ahead of time. It is invoked by the
+  **ART Service** (`art/libartservice/`, e.g. `ArtManagerLocal.java`) through the **`artd`** daemon
+  (`art/artd/`).
+- Output artifacts for an installed app go into the app's own **`oat/<isa>/`** directory next to its
+  APK (`/data/app/<random>/<package>-<random>/oat/arm64/base.odex`, `.vdex`, `.art`). They do **not**
+  go into `/data/dalvik-cache`, which holds only boot-classpath and system artifacts. Verified in
+  `art/artd/artd.cc` (line 320 checks the `oat` directory name) and `art/artd/path_utils.cc` (vdex
+  path built from the oat path, line 208).
+
+### 5.3 Compiler filters: how much to compile
+
+`art/libartbase/base/compiler_filter.h` (lines 36–42) defines the levels:
+
+| Filter | Meaning |
+|---|---|
+| `verify` | Only verify the DEX; everything runs interpreted/JIT at first |
+| `speed-profile` | AOT-compile **only the methods in the profile** (hot code) |
+| `speed` | AOT-compile everything it can for maximum speed |
+| `everything` | Compile everything, including code that is rarely worth it |
+
+**When dexopt happens, and with which filter** (Verified in source,
+`build/make/target/product/runtime_libart.mk`, lines 117–130):
+
+```make
+pm.dexopt.first-boot?=verify
+pm.dexopt.boot-after-ota?=verify
+pm.dexopt.install?=speed-profile
+pm.dexopt.install-fast?=skip
+pm.dexopt.bg-dexopt?=speed-profile
+pm.dexopt.inactive?=verify
+pm.dexopt.cmdline?=verify
+```
+
+**Why not compile everything at install, like Android 5.0 did?** Full AOT meant **slow installs**,
+**long post-OTA boots**, and large files on flash for code that is mostly never run. The modern
+design compiles **only what is actually used**.
+
+### 5.4 Profile-guided compilation: the real lifecycle
+
+1. **First run:** code is **interpreted**. Hot methods are **JIT-compiled** in memory (the JIT is
+   part of ART since Android 7.0).
+2. **Profile collection:** ART records which methods and classes are hot in a profile file,
+   `/data/misc/profiles/cur/<userId>/<package>/primary.prof`. A **reference profile** is merged into
+   `/data/misc/profiles/ref/<package>/`. Verified: path builders in `art/artd/path_utils.cc` (lines
+   224 and 241).
+3. **Background dexopt:** when the device is **idle and charging**, ART Service re-compiles the
+   app with **`speed-profile`** (`pm.dexopt.bg-dexopt`). Hot methods become AOT code, and cold code
+   stays interpreted/JIT.
+4. **Next launches** run the AOT-compiled hot code immediately, giving faster start and less JIT work.
+5. **Baseline/cloud profiles** (Official documentation): apps can ship a *baseline profile*, and Play
+   can deliver *cloud profiles*, so step 3's benefit is available right after install.
+
+**Illustrative AAOS example:** a navigation app's map-rendering and route-search code becomes hot
+in the first drives. While the car is parked and charging (EV) or the system is idle, background
+dexopt compiles those methods, and later drives start faster. *(This is the general mechanism. A car
+may never be "idle + charging" like a phone, so OEMs tune these policies.)*
+
+### 5.5 Garbage collection
+
+**What:** automatic reclamation of objects that are no longer reachable.
+
+**Why it matters for UI:** a long "stop-the-world" pause freezes rendering and causes dropped frames.
+
+**ART today (Verified in source):**
+
+- The build default collector is **CMC**, a *concurrent mark-compact* collector
+  (`art/build/art.go` line 50: `GetenvWithDefault("ART_DEFAULT_GC_TYPE", "CMC")`).
+- At run time, ART uses CMC only if the system property allows it **and** the kernel supports
+  **userfaultfd**. Otherwise it uses **CC** (*concurrent copying*, read-barrier based)
+  (`art/runtime/gc/collector/mark_compact.cc`, `ShouldUseUserfaultfd()`, lines 310–327).
+- Both are **concurrent**: most of the work happens while app threads keep running, with very short
+  pauses. Both **compact** the heap, which reduces fragmentation.
+
+### 5.6 Supported CPU architectures (correction)
+
+ART's architecture directories in AOSP 17 are **`arm`, `arm64`, `riscv64`, `x86`, `x86_64`**
+(`art/runtime/arch/`). **MIPS support was removed** years ago. The old table that listed MIPS was
+outdated.
+
+### 5.7 Dalvik vs ART
+
+| | Dalvik | ART |
+|---|---|---|
+| Era | Android 1.0 – 4.4 | Optional preview in 4.4. **Default since 5.0** |
+| Execution | Interpreter + trace **JIT** (since 2.2). JIT code not persisted | Interpreter + method **JIT** + **AOT** (`dex2oat`) |
+| 5.0 – 6.0 | — | Full AOT at install: fast runtime, slow installs |
+| 7.0+ | — | **Hybrid**: install fast (`verify`/`speed-profile`), JIT + profiles, background AOT of hot code |
+| GC | Mostly stop-the-world mark-sweep | Concurrent (CMS → CC → CMC) |
+| Same idea in both | One VM instance **per app process**, each process forked from **Zygote** | |
+
+### 5.8 Core libraries
+
+The Java core libraries (`libcore/`) are based on **OpenJDK** class libraries, adapted for Android.
+Main packages: `java.lang`, `java.util`, `java.util.concurrent`, `java.io`, `java.nio`, `java.net`,
+`java.security`, `javax.crypto`, `org.json`. Android adds its own packages, such as `android.os`
+(`Handler`, `Looper`, `Binder`), `android.util` (`Log`, `SparseArray`) and `android.text`.
+
+Modern Java language features (lambdas, streams, `java.time`) are available directly on newer API
+levels, or through D8/R8 **desugaring** for older devices.
+
+---
+
+## 6. Java API Framework and System Services
+
+![Framework](README.assets/image-20241217203358309.png)
+
+### 6.1 What is it?
+
+The **Android framework** is the Java/Kotlin API surface apps program against (`android.*`), plus
+the **system services** that implement most of it. It is mostly in `frameworks/base/`.
+
+### 6.2 The most important idea: Manager (client) vs Service (server)
+
+| | **Manager** (e.g. `LocationManager`) | **Service** (e.g. `LocationManagerService`) |
+|---|---|---|
+| Runs in | **the app's process** | **`system_server`** (or another system process) |
+| Created by | `context.getSystemService(...)` | `SystemServer` at boot |
+| Holds | a **Binder proxy** to the service | the real state and the hardware/HAL connections |
+| Trust | none: it runs app code | checks the **caller's UID and permissions** on every call |
+
+**Why split?** The service must be **shared** (one GPS, one window list for all apps) and
+**protected** (an app must not be able to grant itself permissions). Putting it in a separate,
+privileged process and talking over Binder solves both problems.
+
+**Verified in source, how `getSystemService(LOCATION_SERVICE)` works**
+(`frameworks/base/core/java/android/app/SystemServiceRegistry.java`, lines 697–702):
+
+```java
+registerService(Context.LOCATION_SERVICE, LocationManager.class,
+        new CachedServiceFetcher<LocationManager>() {
+    @Override
+    public LocationManager createService(ContextImpl ctx) throws ServiceNotFoundException {
+        IBinder b = ServiceManager.getServiceOrThrow(Context.LOCATION_SERVICE);    // 1. look up Binder
+        return new LocationManager(ctx, ILocationManager.Stub.asInterface(b));    // 2. wrap in proxy
+    }});
+```
+
+1. `ServiceManager.getService*` asks the **servicemanager** process for the Binder named `"location"`
+   ([§7](#7-binder-ipc-and-servicemanager)).
+2. `ILocationManager.Stub.asInterface(b)` wraps it in the AIDL-generated **Proxy**.
+3. `LocationManager` (the public API) calls that proxy. Each call is a Binder transaction into
+   `system_server`.
+
+### 6.3 Key managers and services (corrected)
+
+| Manager (app side) | Service (server side) | Role |
+|---|---|---|
+| `ActivityManager` | `ActivityManagerService` (`extends IActivityManager.Stub`, `am/ActivityManagerService.java:602`) | Processes, app lifecycle, broadcasts, services |
+| (activities, tasks) | `ActivityTaskManagerService` (`extends IActivityTaskManager.Stub`, `wm/ActivityTaskManagerService.java:339`) | **Activities, tasks, back stack**: split out of AMS in Android 10 (Version-dependent) |
+| `PackageManager` | `PackageManagerService` | Installed packages, permissions, components |
+| `WindowManager` | `WindowManagerService` | Window placement, focus, transitions. It hands buffers to **SurfaceFlinger** (separate native process) for composition |
+| Resources (`Resources`, `AssetManager`) | — (in-process) | Strings, layouts, drawables, per-language/per-screen alternatives |
+| `LocationManager` | `LocationManagerService` | GPS/network location, `requestLocationUpdates()`, `getLastKnownLocation()`, geofences (`addProximityAlert()`) |
+| `NotificationManager` | `NotificationManagerService` | `notify()`, `cancel()`, **channels** (`createNotificationChannel()`, required since Android 8.0) |
+| `TelephonyManager` | Telephony services (`com.android.phone`) | Network/SIM/call state. Sensitive identifiers such as `getSimSerialNumber()` now require `READ_PRIVILEGED_PHONE_STATE` and throw `SecurityException` for normal apps on modern targets (Verified: `TelephonyManager.java` ≈ lines 4120–4127) |
+| `SensorManager` | `SensorService` (native, inside `system_server`) | Sensors ([§9](#9-end-to-end-real-example-an-app-reads-the-accelerometer)) |
+| `ContentResolver` → **Content Providers** | Provider in the owning app's process | Structured data sharing between apps (e.g. Contacts) |
+| View system (`View`, `ViewGroup`, `TextView`, `Button`, `RecyclerView`) | — (in-process, rendered by HWUI) | UI widgets |
+
+**API notes:**
+
+- `AsyncTask` is **deprecated** (Verified: `@Deprecated` at `frameworks/base/core/java/android/os/AsyncTask.java`
+  line 199). Use `java.util.concurrent`, Kotlin coroutines or `WorkManager` (androidx).
+- `Fragment`, `RecyclerView`, `Room` and `WorkManager` are **androidx libraries** shipped inside
+  apps, not part of the platform framework.
+
+### 6.4 Three everyday flows
+
+Every Android feature follows the same pattern:
+
+```text
+App → Manager (API, app process) → [Binder/AIDL] → system service → [Binder, stable AIDL HAL] → HAL → system calls → driver → hardware
+```
+
+Permissions and SELinux are checked **on the way down**; every hop can refuse.
+
+#### Flow A: taking a photo
+
+| Layer | Component | Role |
+|---|---|---|
+| App | Camera app | The user taps the shutter |
+| API | `CameraManager`, `CameraDevice` | Public SDK |
+| System service | `cameraserver` (`ICameraService.connectDevice()`, Verified: `frameworks/av/camera/aidl/android/hardware/ICameraService.aidl`) | Shares the camera between apps, checks the `CAMERA` permission |
+| HAL | Camera provider AIDL HAL (`hardware/interfaces/camera/provider/aidl/`) | Vendor code for this sensor and ISP |
+| Kernel | Camera driver (often V4L2) | Talks to the hardware |
+| Hardware | Image sensor + ISP | Captures the image |
+
+```mermaid
+sequenceDiagram
+    participant App as Camera app
+    participant FW as CameraDevice<br/>(app process)
+    participant Svc as cameraserver
+    participant HAL as Camera HAL<br/>(vendor process)
+    participant K as Driver + sensor
+    App->>FW: capture request
+    FW->>Svc: Binder (AIDL)
+    Note over Svc: CAMERA permission + SELinux
+    Svc->>HAL: Binder (stable AIDL HAL)
+    HAL->>K: ioctl()
+    K-->>HAL: frame in a shared buffer
+    HAL-->>App: buffer delivered to the app's Surface / ImageReader
+```
+
+> **Image data does not travel inside Binder parcels.** Binder carries the **control** messages
+> (requests, results, metadata). The pixels are written into **shared graphics buffers**
+> (BufferQueue, DMA-BUF) that the app reads through a `Surface` or `ImageReader`. The 1 MB Binder
+> buffer ([§7.3](#73-the-pieces-verified-in-source)) could not carry them anyway.
+
+#### Flow B: getting the location (the permission wall)
+
+| Layer | Component | Role |
+|---|---|---|
+| App | A navigation app | Calls `requestLocationUpdates()` |
+| API | `LocationManager` | Public location API |
+| System service | `LocationManagerService` (in `system_server`) | Checks `ACCESS_FINE_LOCATION`, combines providers |
+| HAL | GNSS AIDL HAL (`hardware/interfaces/gnss/aidl/`) | Vendor abstraction of the GPS chip |
+| Kernel / hardware | GNSS driver and receiver | Satellite fix |
+
+```mermaid
+sequenceDiagram
+    participant App as Navigation app
+    participant LM as LocationManager
+    participant LMS as LocationManagerService<br/>(system_server)
+    participant HAL as GNSS HAL
+    App->>LM: requestLocationUpdates()
+    LM->>LMS: Binder call
+    alt permission granted
+        LMS->>HAL: start GNSS
+        HAL-->>LMS: location fixes
+        LMS-->>App: onLocationChanged()
+    else permission denied
+        LMS-->>App: SecurityException
+    end
+```
+
+If the user never granted location (or SELinux forbids the caller), the request is rejected **in the
+service**, and the HAL never sees it. Many real apps use Google's Fused Location Provider (part of
+Google Play services, not AOSP), but the platform path is the one above.
+
+#### Flow C: launching an app (why Zygote exists)
+
+| Step | Who | What |
+|---|---|---|
+| 1 | Launcher | The user taps an icon → `startActivity()` (Binder) |
+| 2 | ActivityTaskManagerService / ActivityManagerService (`system_server`) | Decide that a new process is needed |
+| 3 | Zygote | AMS asks Zygote over its **socket** to fork; the child already has ART and the preloaded classes |
+| 4 | New app process | `ActivityThread.main()` calls `attachApplication()` back to AMS (Verified: `IActivityManager.aidl` line 209); AMS answers with `bindApplication`, then the activity is created |
+| 5 | SurfaceFlinger | Composites the app's first frame |
+
+```mermaid
+sequenceDiagram
+    participant L as Launcher
+    participant AMS as ATMS / AMS<br/>(system_server)
+    participant Z as Zygote
+    participant P as New app process
+    participant SF as SurfaceFlinger
+    L->>AMS: startActivity() (Binder)
+    AMS->>Z: fork request (socket)
+    Z-->>P: fork (ART + classes preloaded)
+    P->>AMS: attachApplication() (Binder)
+    AMS->>P: bindApplication + launch activity
+    P->>SF: rendered frames (shared buffers)
+```
+
+The exact fork path is traced in [Boot §5.5](../07.AndroidBootingSequence/README.md#55-forking-an-app-process-the-real-path).
+
+**Takeaway:** every feature is **mediated**. The app codes against a Manager, Binder carries the
+request to a system service that owns the resource and enforces permissions and SELinux, the HAL hides
+vendor differences, and only then does a driver touch the hardware.
+
+---
+
+## 7. Binder IPC and ServiceManager
+
+### 7.1 Why IPC, and why separate processes?
+
+Android deliberately splits the system into many processes: each app, `system_server`,
+`surfaceflinger`, HALs… This gives:
+
+- **isolation**: a crash or exploit in one process cannot directly corrupt another's memory;
+- **least privilege**: each process runs with its own UID and SELinux domain;
+- **stability**: a crashing app does not take down the system.
+
+The price is that processes **cannot call each other's functions directly**. Their address spaces
+are separate. They need **IPC** (Inter-Process Communication).
+
+**What "separate address spaces" means in practice.** Each process has its own virtual memory
+([Linux vs Android §2.3](../01.LinuxVsAndroid/README.md#23-linux-kernel)). The same virtual address
+can point to completely different data in two processes:
+
+```text
+App process                       cameraserver process
+0x1000 → CameraManager object     0x1000 → CameraService object
+0x2000 → String "0"               0x2000 → something else entirely
+```
+
+So when an app calls `openCamera("0")` on a service in another process, it cannot just pass a
+pointer to `"0"`: that address means nothing on the other side. The data has to be **copied** into a
+message, carried across by the kernel, and **rebuilt** in the receiver. Binder and `Parcel` do exactly
+that ([§7.5](#75-aidl-proxy-and-stub-real-generated-code)).
+
+### 7.2 Why Binder instead of sockets, pipes or System V IPC?
+
+Android still uses Unix sockets in places (zygote, property service, logd, sensor event channels),
+but **Binder** is the main IPC because it provides, in one mechanism:
+
+| Need | What Binder provides |
+|---|---|
+| Remote **method calls** with arguments and return values | Transactions with a code + Parcel |
+| **Caller identity** that cannot be forged | The kernel attaches the caller's **PID/UID** (and SELinux context) to each transaction (`Binder.getCallingUid()`) |
+| **Object references** across processes | A Binder object passed in a Parcel becomes a **handle** in the receiver. Callbacks are just Binder objects |
+| **Lifetime tracking** | Reference counting + **death notifications** (`linkToDeath`) |
+| **Efficiency** | Data copied **once** (sender → kernel → receiver's mmapped buffer) |
+| **Thread management** | Each process has a Binder thread pool, and the driver dispatches incoming calls to it |
+
+### 7.3 The pieces (Verified in source)
+
+| Piece | Where | Role |
+|---|---|---|
+| **Binder driver** | Kernel `drivers/android/`, nodes under `/dev/binderfs/` | Moves transactions between processes, translates object references, tracks death |
+| **libbinder** (C++) / `android.os.Binder` (Java) / NDK `AIBinder` | `frameworks/native/libs/binder/` | User-space library: `ProcessState` (opens and mmaps the driver), `IPCThreadState` (sends/receives), `Parcel` |
+| **AIDL compiler** | `system/tools/aidl/` | Generates **Proxy** (client) and **Stub** (server) code from `.aidl` files |
+| **servicemanager** | `frameworks/native/cmds/servicemanager/` | The **name registry**: "car_service" → Binder |
+
+Two concrete numbers from `frameworks/native/libs/binder/ProcessState.cpp`:
+
+```cpp
+#define BINDER_VM_SIZE ((1 * 1024 * 1024) - sysconf(_SC_PAGE_SIZE) * 2)   // line 48
+#define DEFAULT_MAX_BINDER_THREADS 15                                    // line 49
+...
+mVMStart = mmap(nullptr, BINDER_VM_SIZE, PROT_READ, MAP_PRIVATE | MAP_NORESERVE, ...); // line 625
+```
+
+- Each process maps a **receive buffer of 1 MB minus 2 pages**. All in-flight incoming transactions
+  of that process share it. This is why sending large data (big bitmaps) over Binder fails with
+  `TransactionTooLargeException`. Large data should use shared memory (memfd/`SharedMemory`,
+  DMA-BUF) instead.
+- The default Binder thread pool is **15** threads. `system_server` and CarService raise it to 31
+  ([AAOS §2.4](../06.AndroidAutomotiveArchitecture/README.md#24-carservice-comandroidcar)).
+
+### 7.4 ServiceManager: the name registry
+
+**What it is:** a native daemon (`frameworks/native/cmds/servicemanager/`) that maps **names** to
+**Binder objects**. It is the "phone book" of Binder services.
+
+**How clients find ServiceManager itself:** it registers as the Binder **context manager**. The
+driver gives it the special **handle 0**, which every process already knows.
+`servicemanager/main.cpp` line 174 calls `ps->becomeContextManager()`, which issues
+`ioctl(..., BINDER_SET_CONTEXT_MGR_EXT, ...)` (`ProcessState.cpp` line 242). In Java,
+`ServiceManager.getIServiceManager()` wraps `BinderInternal.getContextObject()`, which is handle 0
+(`frameworks/base/core/java/android/os/ServiceManager.java`, around line 137).
+
+**Interface** (`frameworks/native/libs/binder/aidl/android/os/IServiceManager.aidl`): `getService`,
+`checkService`, `addService`, `listServices`, `registerForNotifications`, `isDeclared`, …
+
+**Security (Verified in source):** every `addService` and `getService` is checked against SELinux.
+`Access.cpp` calls `selinux_check_access(..., "add")` / `"find"` / `"list"` (lines 131–152) against
+`service_contexts` labels. A random app therefore cannot register a fake `"car_service"`, and cannot
+look up services it is not allowed to use.
+
+**Three service managers, three Binder domains:**
+
+| Device node | Service manager | Used by |
+|---|---|---|
+| `/dev/binder` | `servicemanager` | Framework, apps, **AIDL HALs** |
+| `/dev/hwbinder` | `hwservicemanager` | **HIDL** HALs |
+| `/dev/vndbinder` | `vndservicemanager` | Vendor processes talking to each other |
+
+All three are started in `init.rc` `on init` (lines 464–466). The real `servicemanager.rc`:
+
+```bash
+service servicemanager /system/bin/servicemanager
+    class core animation
+    user system
+    group system readproc
+    critical
+    ...
+    onrestart class_restart --only-enabled main
+```
+
+It is `critical` (repeated crashes reboot the device), and its restart forces `main`-class services
+to restart. Every Binder name they held must be registered again.
+
+### 7.5 AIDL: Proxy and Stub (real generated code)
+
+#### Why an interface definition language?
+
+For one remote call, someone must: serialize the arguments, send them to the Binder driver, wake the
+remote process, deserialize the arguments, call the real function, serialize the result, and send it
+back. Writing that by hand for every method would be slow and error-prone.
+
+An **IDL** (Interface Definition Language) describes the methods once, and a compiler **generates**
+all of that code. Android has two:
+
+- **AIDL**: used for apps, framework services and, since Android 11, HALs (stable AIDL);
+- **HIDL**: introduced with Treble for HALs, now deprecated for new HALs ([§3](#three-generations-of-hals)).
+
+From one `.aidl` file the AIDL compiler generates three things:
+
+| Generated piece | Runs in | Job |
+|---|---|---|
+| The interface (`ICarProperty`) | both sides | The method list both sides agree on |
+| **Proxy** (`ICarProperty.Stub.Proxy`) | client | Looks like a normal object. Each method packs the arguments, calls the driver, waits, unpacks the result |
+| **Stub** (`ICarProperty.Stub`) | server | Receives the transaction, unpacks the arguments, calls the real method, packs the result |
+
+```text
+App process                                  Service process
+───────────                                  ───────────────
+CarPropertyManager                           CarPropertyService
+      │                                             ▲
+ICarProperty.Stub.Proxy                     ICarProperty.Stub
+      │                                             │
+      └──────────── Binder driver (kernel) ─────────┘
+```
+
+#### What is a `Parcel`?
+
+A **`Parcel`** is the container Binder carries: a compact binary buffer into which the Proxy
+**writes** (marshals) the method's arguments, and from which the Stub **reads** (unmarshals) them.
+The reply travels back in a second Parcel. Conceptually:
+
+```text
+Parcel (_data)                           Parcel (_reply)
+───────────────────────────             ───────────────────────────
+interface token: "…ICarProperty"         "no exception" marker
+transaction code: getProperty            CarPropertyValue fields
+prop = 0x11600207, area = 0
+```
+
+A Parcel can hold:
+
+- primitives (`int`, `long`, `boolean`, `float`, `double`…), strings and byte arrays;
+- **`Parcelable`** objects (custom types that know how to write and read themselves);
+- **Binder object references** (`IBinder`): this is how callbacks are passed, and the receiver gets
+  a handle it can call back on;
+- **file descriptors**: how large data (shared memory, graphics buffers) is shared without copying
+  it through Binder;
+- lists, arrays, maps and `Bundle`s of supported types.
+
+**`Parcelable` vs Java `Serializable`.** A `Parcelable` class writes its fields explicitly in
+`writeToParcel()` and rebuilds itself through a `CREATOR`, in the **same order**. Java
+`Serializable` uses reflection and is much slower. That is why Android uses Parcelable for IPC.
+
+> **A Parcel is for short-lived IPC only.** Its format is not stable across releases. Do not write
+> Parcels to disk or send them over the network (Official documentation, `android.os.Parcel`).
+
+The excerpts below show this generated code for real. To write and run your own AIDL interfaces (an
+app service, a native C++ service and a VINTF HAL), see
+[Binder IPC and AIDL, Part 2](../10.AIDLHandsOn/README.md#part-2--hands-on-examples).
+
+You write an interface, `car-lib/src/android/car/hardware/property/ICarProperty.aidl`. At build time
+the AIDL compiler generates `ICarProperty.java` inside
+`out/soong/.intermediates/packages/services/Car/car-lib-module/android.car-module.impl/android_common/gen/aidl/*.srcjar`.
+The excerpts below are from that generated file.
+
+**1. `asInterface()`: decide between a local object and a remote proxy**
+
+```java
+public static android.car.hardware.property.ICarProperty asInterface(android.os.IBinder obj) {
+    if ((obj==null)) { return null; }
+    android.os.IInterface iin = obj.queryLocalInterface(DESCRIPTOR);
+    if (((iin!=null)&&(iin instanceof android.car.hardware.property.ICarProperty))) {
+        return ((android.car.hardware.property.ICarProperty)iin);       // same process: direct call
+    }
+    return new android.car.hardware.property.ICarProperty.Stub.Proxy(obj); // other process: proxy
+}
+```
+
+**2. Proxy (client side): marshal the arguments and call `transact()`**
+
+```java
+@Override public android.car.hardware.CarPropertyValue getProperty(int prop, int zone) throws android.os.RemoteException {
+    android.os.Parcel _data = android.os.Parcel.obtain(asBinder());
+    android.os.Parcel _reply = android.os.Parcel.obtain();
+    android.car.hardware.CarPropertyValue _result;
+    try {
+        _data.writeInterfaceToken(DESCRIPTOR);   // "android.car.hardware.property.ICarProperty"
+        _data.writeInt(prop);
+        _data.writeInt(zone);
+        boolean _status = mRemote.transact(Stub.TRANSACTION_getProperty, _data, _reply, 0); // blocks
+        _reply.readException();                  // re-throws server-side exceptions (e.g. SecurityException)
+        _result = _reply.readTypedObject(android.car.hardware.CarPropertyValue.CREATOR);
+    } finally {
+        _reply.recycle();
+        _data.recycle();
+    }
+    return _result;
+}
+```
+
+**3. Stub (server side): unmarshal and call the real implementation**
+
+```java
+case TRANSACTION_getProperty:          // = IBinder.FIRST_CALL_TRANSACTION + 3
+{
+    int _arg0; _arg0 = data.readInt();
+    int _arg1; _arg1 = data.readInt();
+    data.enforceNoDataAvail();
+    android.car.hardware.CarPropertyValue _result = this.getProperty(_arg0, _arg1); // → CarPropertyService
+    reply.writeNoException();
+    reply.writeTypedObject(_result, android.os.Parcelable.PARCELABLE_WRITE_RETURN_VALUE);
+    break;
+}
+```
+
+`CarPropertyService extends ICarProperty.Stub`, so `this.getProperty(...)` is the real CarService
+implementation ([AAOS §4.1](../06.AndroidAutomotiveArchitecture/README.md#41-reading-a-property-get)).
+
+### 7.6 One call, step by step
+
+```mermaid
+%%{init: {"sequence": {"mirrorActors": false}}}%%
+sequenceDiagram
+    autonumber
+    participant C as App code<br/>(client thread)
+    participant P as Proxy<br/>(app process)
+    participant D as Binder driver<br/>(kernel)
+    participant S as CarPropertyService<br/>(Binder thread, CarService)
+    C->>P: getProperty(prop, zone)
+    P->>P: pack args into Parcel
+    P->>D: ioctl BINDER_WRITE_READ
+    D->>D: copy once, add caller UID
+    D->>S: wake idle Binder thread
+    S->>S: onTransact() → getProperty()
+    S-->>D: reply Parcel
+    D-->>P: copy reply, wake client
+    P-->>C: CarPropertyValue
+```
+
+1. The app calls `getProperty(prop, zone)` on what looks like a local object. It is actually the
+   generated proxy, `ICarProperty.Stub.Proxy`.
+2. The proxy writes the interface token and the arguments into a `Parcel` (`_data`).
+3. `transact(TRANSACTION_getProperty, …)` ends in an `ioctl(BINDER_WRITE_READ)` on `/dev/binder`.
+   The client thread now blocks.
+4. The driver copies `_data` **once**, straight into CarService's mmapped receive buffer, and attaches
+   the caller's PID and UID.
+5. The driver wakes an idle Binder thread in the CarService process.
+6. On that thread, `Stub.onTransact(code, data, reply)` unpacks the arguments and calls
+   `CarPropertyService.getProperty(...)`, which can check the caller with `Binder.getCallingUid()`.
+7. The result is written into the `reply` Parcel and sent back through the driver.
+8. The driver copies the reply into the client's buffer and wakes the client thread.
+9. The proxy unpacks the `CarPropertyValue`, or re-throws the server's exception, and returns it.
+
+- The client thread **blocks** until the reply arrives, unless the method is declared **`oneway`**
+  (fire-and-forget). Callbacks such as `IVehicleCallback.onPropertyEvent` are `oneway`, so a slow
+  client cannot block the sender.
+- The server method runs on a **Binder thread**, not the main thread. Implementations must be
+  thread-safe.
+
+> **Deeper:** [Binder IPC in depth](../10.AIDLHandsOn/README.md#part-1--binder-ipc-in-depth) follows this
+> same call through every layer (JNI, libbinder, the driver's `BC_`/`BR_` commands, the server's Binder
+> thread), shows the Parcel byte by byte, and covers callbacks, `oneway`, caller identity and errors.
+
+### 7.7 When the remote process dies
+
+1. A client calls `binder.linkToDeath(recipient, 0)` on the remote Binder.
+2. If the server process dies, the driver notices that the process's Binder node is gone and
+   delivers **`binderDied()`** to every registered recipient.
+3. Calls on a dead Binder throw **`DeadObjectException`** (a `RemoteException`).
+
+**Real example:** CarService links to the VHAL's death in `CarServiceImpl.onCreate()`
+(`mVehicle.linkToDeath(mVehicleDeathRecipient)`), and `servicemanager.rc`'s `onrestart` lines show
+the system-level recovery strategy.
+
+---
+
+## 8. Application layer and the app sandbox
+
+![Apps](README.assets/image-20241217234537465.png)
+
+Apps (Launcher, Settings, Contacts, third-party apps) sit at the top and use the framework APIs.
+In AAOS these include CarLauncher, CarSettings, CarSystemUI and media/navigation apps.
+
+### The sandbox: how isolation really works (Verified in source + Official documentation)
+
+1. **One Linux UID per app.** At install, each app gets an app ID in the range
+   `AID_APP_START = 10000` … `AID_APP_END = 19999`
+   (`system/core/libcutils/include/private/android_filesystem_config.h`, lines 216–217). On
+   multi-user devices the actual UID is `userId × 100000 + appId` (`AID_USER_OFFSET 100000`, same
+   file, line 256). For example, the same app is UID 10057 for user 0 and 1010057 for user 10. Each app runs
+   in **its own process** with that UID, so the kernel's normal UID checks keep apps out of each
+   other's files.
+2. **Private data directories:** `/data/user/<userId>/<package>` (credential-encrypted storage) and
+   `/data/user_de/<userId>/<package>` (device-encrypted, available before unlock). For user 0,
+   `/data/data/<package>` is the same storage. Other apps cannot read these directories.
+3. **SELinux:** third-party apps run in the `untrusted_app*` domains, and system apps in
+   `system_app`, `platform_app` or `priv_app`. This limits what an app can do **even if it has the
+   right UID**. For example, it cannot talk to a HAL
+   ([AAOS §7](../06.AndroidAutomotiveArchitecture/README.md#7-security-permissions-and-selinux)).
+4. **Permissions:**
+   - Apps declare permissions in `AndroidManifest.xml`.
+   - *Normal* permissions are granted at install.
+   - *Dangerous* (runtime) permissions such as location, camera and `CAR_SPEED` must be **granted by
+     the user** (since Android 6.0).
+   - *Signature/privileged* permissions are only for platform-signed or privileged system apps.
+5. **Each call is checked by the service.** System services call
+   `checkCallingOrSelfPermission(...)` / `Binder.getCallingUid()` on every Binder call. The check
+   happens **in the service process**, which the app cannot modify.
+
+---
+
+## 9. End-to-end real example: an app reads the accelerometer
+
+```mermaid
+%%{init: {"sequence": {"mirrorActors": false}}}%%
+sequenceDiagram
+    participant App as App<br/>(Java)
+    participant N as libsensor<br/>(native, in app)
+    participant SS as SensorService<br/>(in system_server)
+    participant HAL as Sensors HAL<br/>(vendor process)
+    participant K as Kernel<br/>driver
+    App->>App: getSystemService()
+    App->>N: registerListener() via JNI
+    N->>SS: Binder: getService()
+    N->>SS: Binder: createSensorEventConnection()
+    SS-->>N: connection + BitTube
+    SS->>HAL: Binder: activate() / batch()
+    K-->>HAL: raw samples
+    HAL-->>SS: events (FMQ)
+    SS-->>N: events over BitTube
+    N-->>App: onSensorChanged()
+```
+
+**Step by step:**
+
+1. **Manager.** `context.getSystemService(Context.SENSOR_SERVICE)` returns a
+   `SystemSensorManager` (`SystemServiceRegistry.java`, lines 794–798). Unlike `LocationManager`, it
+   is backed by **native** code through JNI (`frameworks/base/core/jni/android_hardware_SensorManager.cpp`).
+2. **Service lookup.** Native `SensorManager` (`frameworks/native/libs/sensor/SensorManager.cpp`) looks
+   up the Binder service named **`"sensorservice"`** (line 180). That name is `SensorService::getServiceName()`
+   (`frameworks/native/services/sensorservice/SensorService.h`, line 179).
+3. **Where SensorService lives.** `SystemServer` starts the Java `com.android.server.sensors.SensorService`
+   (`SystemServer.java`, lines 1458–1459). It calls `startSensorServiceNative(...)`
+   (`services/core/java/com/android/server/sensors/SensorService.java`, line 54), so the **native**
+   SensorService runs **inside the `system_server` process**. It is not a separate daemon.
+4. **Event connection.** `createSensorEventConnection(...)` (`SensorManager.cpp`, line 383) returns a
+   connection whose data channel is a **`BitTube`**. A BitTube is a Unix **`socketpair(AF_UNIX,
+   SOCK_SEQPACKET)`** (`frameworks/native/libs/sensor/BitTube.cpp`, line 70). High-rate sensor events
+   flow over this socket, not as one Binder call per event. **Control** uses Binder, and **data**
+   uses a cheaper channel.
+5. **HAL.** `SensorService`'s `SensorDevice` talks to the vendor's **Sensors AIDL HAL**. It checks
+   `AServiceManager_isDeclared("android.hardware.sensors.ISensors/default")` and waits for it
+   (`AidlSensorHalWrapper.cpp`, lines 109–117). There is a HIDL fallback (`HidlSensorHalWrapper.cpp`).
+6. **Hardware.** The vendor's HAL implementation reads the kernel driver. How it does that is
+   vendor-specific.
+7. **Delivery.** `SensorEventConnection::sendEvents()`
+   (`frameworks/native/services/sensorservice/SensorEventConnection.cpp`, line 316) calls
+   `SensorEventQueue::write()` (`frameworks/native/libs/sensor/SensorEventQueue.cpp`, line 65), which
+   writes the events into the BitTube. In the app, the JNI `Receiver` adds the BitTube's file
+   descriptor to the app's **`Looper`** (`android_hardware_SensorManager.cpp`, line 393). When events
+   arrive, it calls Java `dispatchSensorEvent()`, which calls your listener's **`onSensorChanged()`**
+   (`SystemSensorManager.java`, line 1101).
+
+**Design lessons:** the app never touches the HAL, the service is shared and permission-checked,
+control uses Binder, and bulk data uses a dedicated channel.
+
+> **Illustrative: adding a custom sensor.** If an OEM adds a custom cabin temperature sensor:
+> 
+>- **Phone-style option:** expose it through the Sensors HAL as a vendor sensor type. Apps use`SensorManager`.
+> - **AAOS option (preferred for vehicle signals):** expose it as a **VENDOR vehicle property** in the VHAL, and apps use `CarPropertyManager` ([AAOS §3](../06.AndroidAutomotiveArchitecture/README.md#3-vehicle-properties-in-depth)).
+> 
+> In both cases the flow is App → Manager → Binder → system service → Binder → HAL → driver.
+> ServiceManager is only used to **look up** the Binder; it is not on the data path.
+
+---
+
+## 10. How AAOS maps onto these layers
+
+| Layer | Generic Android | AAOS additions |
+|---|---|---|
+| Apps | Launcher3, SystemUI, Settings | CarLauncher, CarSystemUI, CarSettings, OEM vehicle apps |
+| Framework (client libs) | `android.*` managers | `android.car.*` managers (`CarPropertyManager`…) in `android.car.jar` |
+| System services | `system_server` | + **CarServiceHelperService** (in `system_server`), + **CarService** process (`com.android.car`) |
+| Native daemons | surfaceflinger, audioserver… | + `carpowerpolicyd`, `carwatchdogd`, `evsmanagerd`… |
+| HAL | sensors, audio, camera… | + **VHAL**, EVS, AudioControl, CAN… |
+| Kernel | Android Common Kernel | Same, plus vehicle-relevant drivers (CAN, V4L2 cameras, hibernation) |
+
+Full details: [AAOS Architecture](../06.AndroidAutomotiveArchitecture/README.md).
+
+### 10.1 Case study: a request to put the car to sleep
+
+A popular teaching slide follows one request ("suspend the system") down every layer of an
+automotive device. Its chain is:
+
+```mermaid
+flowchart TB
+    A["Some app"] -- "AIDL" --> B["Privileged app"]
+    B -- "AIDL" --> C["Vendor power<br/>management service"]
+    C -- "AIDL" --> D["Car power<br/>management service"]
+    D -- "HIDL" --> E["Power<br/>management HAL"]
+    E -- "enter_deep_sleep()<br/>(system calls)" --> F["PMIC driver"]
+    F --> G["I²C platform<br/>driver"] --> H["I²C bus driver"]
+    H -- "I²C" --> I["PMIC device"]
+```
+
+The lesson is right: a request passes through several processes, each with its own permissions,
+and only the bottom layer touches hardware. The concrete path in **AOSP 17 AAOS** is different
+(Verified in source):
+
+```mermaid
+flowchart TB
+    V["VHAL<br/>(vehicle MCU:<br/>shut down / sleep)"] -- "AP_POWER_STATE_REQ<br/>(Binder, IVehicle)" --> P["PowerHalService<br/>(CarService process)"]
+    P --> C["CarPower<br/>ManagementService<br/>(CarService process)"]
+    C -- "SystemInterface<br/>.enterDeepSleep()" --> S["SystemPower<br/>ControlHelper<br/>.forceDeepSleep()"]
+    S -- "write mem to<br/>/sys/power/state" --> K["Kernel suspend<br/>(drivers, PMIC<br/>via I²C)"]
+```
+
+- **Who decides:** in a car, the **vehicle** decides when to sleep (ignition off). The VHAL delivers
+  `AP_POWER_STATE_REQ` (`service/src/com/android/car/hal/PowerHalService.java`, line 88), and
+  `CarPowerManagementService` runs the shutdown-prepare sequence.
+- **How it sleeps:** `SystemInterface.enterDeepSleep()` →
+  `SystemPowerControlHelper.forceDeepSleep()`, which writes `"mem"` (`SUSPEND_TYPE_MEM`, line 43) to
+  `/sys/power/state` (line 47) (`packages/services/Car/service/src/com/android/car/systeminterface/`).
+  There is no separate "power management HAL" on this path.
+- **Interfaces:** the slide's "HIDL" step is outdated; current automotive HALs are AIDL.
+- **Below the kernel line:** the kernel's suspend code calls the drivers' suspend hooks, and the PMIC
+  driver talks to the PMIC chip over I²C (General concept, vendor-specific).
+
+### 10.2 What restricts you: SELinux `neverallow` rules and the CDD
+
+Two things limit which arrows in such a chain you are **allowed** to draw, even if the code could
+make the call:
+
+- **SELinux.** Every hop above (app → service, service → HAL, process → device file) is checked
+  against the SELinux policy. **`neverallow`** rules in `system/sepolicy` forbid whole classes of
+  access, such as untrusted apps calling HALs. The build fails if a device's policy violates them,
+  and CTS checks them on the device ([AAOS §7](../06.AndroidAutomotiveArchitecture/README.md#7-security-permissions-and-selinux)).
+- **The CDD** (Compatibility Definition Document) lists what a device must do to be "Android
+  compatible". It is checked by **CTS** (and VTS for vendor interfaces). A device that breaks it
+  cannot ship Google's services.
+
+---
+
+## 11. Common misconceptions
+
+| Misconception | Correct interpretation |
+|---|---|
+| "Each layer is a process." | Layers are code dependencies. Framework code runs both in apps (managers) and in `system_server` (services). ART runs inside each Java process. |
+| "The Android kernel has an alarm driver, a logger driver and the low memory killer." | Those were replaced: timerfd alarms, user-space `logd`, user-space `lmkd` with PSI ([§2](#2-linux-kernel-layer)). |
+| "Android uses ION and ashmem." | Modern kernels use DMA-BUF heaps and memfd. |
+| "Android doesn't use traditional IPC." | Binder is the main IPC, but Unix sockets are used heavily (zygote, property service, logd, sensor BitTube). |
+| "Apps or ART talk to the HAL." | System services and native daemons talk to HALs. Apps use framework APIs. |
+| "ART compiles every app fully at install." | Only Android 5–6 did. Today: `speed-profile` at install, JIT + profiles, background dexopt of hot code. |
+| "Compiled app code lives in `/data/dalvik-cache` / in the APK." | App artifacts are in the app's `oat/<isa>/` directory. dalvik-cache is for the boot classpath/system. |
+| "Android uses OpenSSL / WebKit." | BoringSSL + Conscrypt. WebView is Chromium-based (Blink). |
+| "The native build system is ndk-build and Gradle." | **Platform** builds use **Soong (Android.bp) + Make**. **App** builds use Gradle (and ndk-build/CMake for app native code). |
+| "ServiceManager forwards every call." | ServiceManager only **registers and looks up** names. After lookup, calls go directly client ↔ server through the driver. |
+| "VINTF compatibility is checked by `init` at every boot." | It is checked at build time, before OTA, and by VTS. At run time `servicemanager` rejects undeclared VINTF services ([§3](#3-hardware-abstraction-layer-hal)). |
+| "After Treble every HAL is a separate process." | Most are, but same-process HALs (GPU drivers, graphics mapper) are still loaded into the caller. |
+| "Camera frames / big data travel through Binder." | Binder carries control messages and file descriptors. Pixels and audio use shared buffers. |
+
+**Further reading (official):** [Android architecture](https://source.android.com/docs/core/architecture),
+[HIDL/AIDL HALs](https://source.android.com/docs/core/architecture/aidl/aidl-hals),
+[lmkd](https://source.android.com/docs/core/perf/lmkd),
+[DMA-BUF heaps](https://source.android.com/docs/core/architecture/kernel/dma-buf-heaps),
+[ART](https://source.android.com/docs/core/runtime),
+[OpenSL ES deprecation / AAudio](https://developer.android.com/ndk/guides/audio/opensl/opensl-for-android).
+
+**Previous:** [Android Automotive OS](../04.AndroidAutomotiveOS/README.md) ·
+**Next:** [AAOS Architecture](../06.AndroidAutomotiveArchitecture/README.md)
+
+---
+
+## 12. Source map
+
+| Topic | Path (AOSP 17) | Key symbols (line) |
+|---|---|---|
+| binderfs mount | `system/core/rootdir/init.rc` | lines 231–245 |
+| memfd | `system/core/libcutils/ashmem-dev.cpp` | `__memfd_create_region` (215) |
+| DMA-BUF heaps lib | `system/memory/libdmabufheap/` | — |
+| lmkd | `system/memory/lmkd/lmkd.cpp` | PSI monitors |
+| logd | `system/logging/logd/logd.rc` | sockets (2–4) |
+| Alarms | `frameworks/base/apex/jobscheduler/service/jni/com_android_server_alarm_AlarmManagerService.cpp` | `CLOCK_BOOTTIME_ALARM` (68) |
+| Suspend | `system/hardware/interfaces/suspend/aidl/default/SystemSuspend.cpp` | `kSysPowerWakeLock` (75) |
+| Task profiles | `system/core/libprocessgroup/profiles/task_profiles.json` | — |
+| Legacy HAL | `hardware/libhardware/hardware.c` | `hw_get_module` (275) |
+| HIDL infra | `system/libhidl/`, `system/hwservicemanager/` | `hwservicemanager.rc` |
+| VINTF | `system/libvintf/`, `hardware/interfaces/compatibility_matrices/` | — |
+| Bionic | `bionic/` | — |
+| WebView | `external/chromium-webview/` | — |
+| TLS | `external/boringssl/`, `external/conscrypt/` | — |
+| Native audio | `frameworks/av/media/libaaudio/`, `frameworks/wilhelm/` | — |
+| ART | `art/dex2oat/`, `art/artd/`, `art/libartservice/` | `artd.cc` (320), `path_utils.cc` (208, 224, 241) |
+| Compiler filters | `art/libartbase/base/compiler_filter.h` | (36–42) |
+| dexopt defaults | `build/make/target/product/runtime_libart.mk` | (117–130) |
+| GC | `art/build/art.go`, `art/runtime/gc/collector/mark_compact.cc` | (50), `ShouldUseUserfaultfd` (310) |
+| Service registry (app side) | `frameworks/base/core/java/android/app/SystemServiceRegistry.java` | location (697), sensor (794) |
+| Java ServiceManager | `frameworks/base/core/java/android/os/ServiceManager.java` | `getService` (150) |
+| servicemanager | `frameworks/native/cmds/servicemanager/{main.cpp,ServiceManager.cpp,Access.cpp,servicemanager.rc}` | `becomeContextManager` (174), `addService` (512), `getService` (395) |
+| libbinder | `frameworks/native/libs/binder/ProcessState.cpp` | `BINDER_VM_SIZE` (48), threads (49) |
+| IServiceManager | `frameworks/native/libs/binder/aidl/android/os/IServiceManager.aidl` | — |
+| Sensors | `frameworks/native/libs/sensor/{SensorManager.cpp,BitTube.cpp,SensorEventQueue.cpp}`, `frameworks/native/services/sensorservice/` | (180, 383), `socketpair` (70) |
+| App UIDs | `system/core/libcutils/include/private/android_filesystem_config.h` | `AID_APP_START` (216) |
+| AMS / ATMS | `frameworks/base/services/core/java/com/android/server/{am/ActivityManagerService.java,wm/ActivityTaskManagerService.java}` | (602), (339) |
