@@ -1,7 +1,7 @@
 # Linux vs Android — What Android Takes from Linux, and What It Changes
 
-> **Source baseline:** Android-side claims were checked against **AOSP `android-17.0.0_r1`** (your
-> Cuttlefish tree). Your trees contain only **prebuilt** kernels, so kernel-internal behaviour is
+> **Source baseline:** Android-side claims were checked against **AOSP `android-17.0.0_r1`** (My
+> Cuttlefish tree). My trees contain only **prebuilt** kernels, so kernel-internal behaviour is
 > labelled **General concept** and was checked against kernel/official documentation.
 
 | Label | Meaning |
